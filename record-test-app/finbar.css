@@ -1,0 +1,36 @@
+div.finbar-horizontal > .thumb,
+div.finbar-vertical > .thumb {
+    background-color: var(--scrollbar-thumb-color, #d3d3d3);
+    border-radius: 4px;
+    margin: 2px;
+    opacity: var(--scrollbar-thumb-inactive-opacity, 0.4);
+    transition: opacity 0.5s;
+}
+div.finbar-horizontal > .thumb.hover,
+div.finbar-vertical > .thumb.hover {
+    opacity: 1;
+    transition: opacity 0.5s;
+}
+div.finbar-vertical {
+    top: 0; /* stretched from top to bottom edges of container (top, bottom) */
+    bottom: 0;
+    left: var(--scrollbar-vertical-left, 0);
+    right: var(--scrollbar-vertical-right, 0);
+    width: var(--scrollbar-vertical-width, 11px);
+}
+div.finbar-vertical > .thumb {
+    top: 0; /* optional: initial position of thumb within vertical scrollbar */
+    right: 0;
+    width: var(--scrollbar-vertical-thumb-width, 7px);
+}
+div.finbar-horizontal {
+    left: 0; /* stretched from left to right edges of container (left, right) */
+    right: 0;
+    bottom: var(--scrollbar-horizontal-bottom, 0);
+    height: var(--scrollbar-horizontal-height, 11px);
+}
+div.finbar-horizontal > .thumb {
+    left: 0;  /* optional: initial position of thumb within horizontal scrollbar */
+    bottom: 0;
+    height: var(--scrollbar-horizontal-thumb-height, 7px);
+}

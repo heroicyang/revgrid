@@ -1,0 +1,67 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+		{
+			"type": "npm",
+			"script": "lint",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"label": "npm: lint"
+		},
+		{
+			"type": "npm",
+			"script": "esm",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [
+				"$tsc"
+			],
+      "label": "npm: esm",
+      "detail": "tsc --build ./tsconfig.esm.json"
+		},
+		{
+			"type": "npm",
+			"script": "api",
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"label": "npm: api"
+		},
+		{
+			"type": "npm",
+			"script": "testapp:build",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"label": "npm: test-app:build",
+		},
+		{
+			"type": "npm",
+			"script": "testapp:serve",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"label": "npm: test-app:serve",
+		},
+		{
+			"type": "npm",
+			"script": "recordtestapp:build",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"label": "npm: record-test-app:build",
+		},
+		{
+			"type": "npm",
+			"script": "recordtestapp:serve",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"label": "npm: record-test-app:serve",
+		}
+  ],
+}

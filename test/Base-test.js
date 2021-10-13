@@ -1,6 +1,6 @@
 'use strict';
 
-var assert = require('assert');
+import { assert } from 'assert';
 
 var instance = [{
     name:'extend',
@@ -11,7 +11,7 @@ describe('Base', function(){
     describe('Module expected shape', function(){
 
         it('Should have the instance shape', function(){
-            var base = require('../src/Base');
+            import { base } from '../src/Base';
 
             instance.forEach(function(key){
                 assert.equal(typeof(base[key.name]), key.type);
@@ -21,7 +21,7 @@ describe('Base', function(){
 
     describe('extend', function(){
         it('Should create a new constructor', function(){
-            var base = require('../src/Base');
+            import { base } from '../src/Base';
             var myConstructor = base.extend('myConstructor', {a:'a'});
 
             assert.equal(typeof(myConstructor), 'function');
@@ -52,7 +52,7 @@ describe('Base', function(){
 
     describe('HypergridError', function(){
         it('should assign the message', function(){
-            var base = require('../src/Base');
+            import { base } from '../src/Base';
             var message = 'this is the message';
             var MyConstructor = base.extend('MyConstructor', {a:'a'});
             var myObject = new MyConstructor();

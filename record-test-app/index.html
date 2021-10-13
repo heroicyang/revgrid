@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Revgrid Record Adapter Set Test application</title>
+    </head>
+    <body>
+        <div class="left-half">
+            <form>
+                <fieldset>
+                    Current Record Value: <span id="currentRecordValueSpan"></span><br>
+                    Previous Record Value: <span id="previousRecordValueSpan"></span><br>
+                    <button id="insertRecordButton" type="button">Insert Record</button>
+                    <span id="insertRecordIndexSpan"></span>
+                    <button id="insertRecordsButton" type="button">Insert Records</button>
+                    <span id="insertRecordsIndexSpan"></span><br>
+                    <button id="insertManyRecordsButton" type="button">Insert Many Records</button>
+                    <span id="insertManyRecordsIndexSpan"></span><br>
+                    <button id="deleteRecordButton" type="button">Delete Record</button>
+                    <span id="deleteRecordIndexSpan"></span>
+                    <button id="deleteRecordsButton" type="button">Delete Records</button>
+                    <span id="deleteRecordsIndexSpan"></span><br>
+                    <button id="modifyValueButton" type="button">Modify Value</button>
+                    <span id="modifyValuePosSpan"></span><br>
+                    <button id="modifyValuesButton" type="button">Modify Values</button><br>
+                    <button id="clearRecordsButton" type="button">Clear Records</button><br>
+                    <input id="randomStuffCheckbox" type="checkbox">Random Stuff
+                </fieldset>
+                <fieldset>
+                    <input id="continuousFilteringCheckbox" type="checkbox">Continuous Filtering
+                    <button id="decrementFilterIntegerButton" type="button">-</button>
+                    <input id="filterIntegerTextbox" type="text" size="5">
+                    <button id="incrementFilterIntegerButton" type="button">+</button><br>
+                    <input id="hideStringFieldCheckbox" type="checkbox">Hide String Field<br>
+                    Fixed Columns:
+                    <input id="fixedColumnTextbox" type="text" size="3"><br />
+                    <input id="enableLargeHighlightCheckbox" type="checkbox">Highlight Large Rows<br>
+                    <input id="rowOrderReversedCheckbox" type="checkbox">Row Order Reversed<br>
+                </fieldset>
+                <fieldset>
+                    Cell Padding:
+                    <button id="decrementCellPaddingButton" type="button">-</button>
+                    <input id="cellPaddingTextbox" type="text" size="3">
+                    <button id="incrementCellPaddingButton" type="button">+</button><br>
+                    Fixed Row Height:
+                    <button id="decrementRowHeightButton" type="button">-</button>
+                    <input id="rowHeightTextbox" type="text" size="3">
+                    <button id="incrementRowHeightButton" type="button">+</button><br>
+                    Vertical Scrollbar width:
+                    <input id="vertScrollbarWidthTextbox" type="text" size="5"><br>
+                    Vertical Scrollbar thumb width:
+                    <input id="vertScrollbarThumbWidthTextbox" type="text" size="5"><br>
+                    Scrollbar margin (Vert and Horiz):
+                    <input id="scrollbarMarginTextbox" type="text" size="5"><br>
+                    <input id="gridRightAlignedCheckbox" type="checkbox">Grid right aligned<br>
+                    <button id="applySettingsButton" type="button">Apply</button>
+                </fieldset>
+                <fieldset>
+                    <button id="autoSizeStringButton" type="button">Auto Size String</button>
+                    <button id="autoWidenStringButton" type="button">Auto Widen String</button><br>
+                    <button id="autoSizeAllButton" type="button">Auto Size All</button>
+                    <button id="autoWidenAllButton" type="button">Auto Widen All</button><br>
+                </fieldset>
+                <fieldset>
+                    Performance: <span id="performanceTimeSpan"></span><br>
+                    <button id="performance30kButton" type="button" >Initialise with 30k Records</button><br>
+                    <button id="performance60kButton" type="button" >Initialise with 60k Records</button><br>
+                    <button id="performanceAddOneAtStartButton" type="button" >Add One Record (Start)</button><br>
+                    <button id="performanceAddOneAtMiddleButton" type="button" >Add One Record (Middle)</button><br>
+                    <button id="performanceAddOneAtEndButton" type="button" >Add One Record (End)</button><br>
+                    <button id="performanceDeleteOneAtStartButton" type="button" >Delete One Record (Start)</button><br>
+                    <button id="performanceDeleteOneAtMiddleButton" type="button" >Delete One Record (Middle)</button><br>
+                    <button id="performanceDeleteOneAtEndButton" type="button" >Delete One Record (End)</button><br>
+                    <button id="performanceModifyRecordsButton" type="button" >Mutate All Records</button><br>
+                    <button id="performanceModifyOneRecordButton" type="button" >Mutate One Record</button><br>
+                </fieldset>
+            </form>
+        </div>
+        <div class="right-half">
+            <div id="gridInfoDiv">
+                <div><span>Active Width</span></div>
+                <div><span id="activeWidthSpan"></span></div>
+                <div><span>Render Count</span></div>
+                <div><span id="renderCountSpan"></span></div>
+            </div>
+            <div id="gridHost"></div>
+        </div>
+    </body>
+</html>

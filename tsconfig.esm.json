@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist/esm",
+    "module": "es2020",
+    "declaration": true,
+    "declarationMap": true,
+    "declarationDir": "lib",
+    "sourceMap": true,
+    "inlineSourceMap": false,
+    "tsBuildInfoFile": "tsbuildinfo/esm.tsbuildinfo",
+    "composite": true,
+  },
+
+  "include": [
+    "src/code/public-api.ts"
+  ],
+
+  "references": [
+    { "path": "src/code/grid/grid-tsconfig.json" },
+    { "path": "src/code/adapter-sets/record/rev-record-tsconfig.json" },
+    { "path": "src/code/adapter-sets/simple/rev-simple-tsconfig.json" }
+  ]
+}
