@@ -112,45 +112,49 @@ export class RevRecordRowMap {
 
     findInsertRowIndex(recordIndex: RevRecordIndex) {
         const records = this.records;
-        let record = records[recordIndex];
-        let row = record.__row;
-        if (row !== undefined) {
-            return row.index;
+        const recordCount = records.length;
+        if (recordIndex >= recordCount) {
+            return this.rows.length;
         } else {
-            // Search for either previous or next record with a row.
-            // Search in direction in which there are least number of records
-            const recordCount = this.records.length;
-            const midIndex = recordCount / 2.0;
-            if (recordIndex >= midIndex) {
-                if (recordCount > 500) {
-                    // It is likely that some earlier/lower records have already got rows while those after mid do not
-                    // Try a portion of the lower range first
-                    const lowerRangeStart = recordIndex -  recordCount / 20.0;
-                    for (let i = recordIndex - 1; i > lowerRangeStart; i--) {
+            let record = records[recordIndex];
+            let row = record.__row;
+            if (row !== undefined) {
+                return row.index;
+            } else {
+                // Search for either previous or next record with a row.
+                // Search in direction in which there are least number of records
+                const midIndex = recordCount / 2.0;
+                if (recordIndex >= midIndex) {
+                    if (recordCount > 500) {
+                        // It is likely that some earlier/lower records have already got rows while those after mid do not
+                        // Try a portion of the lower range first
+                        const lowerRangeStart = recordIndex -  recordCount / 20.0;
+                        for (let i = recordIndex - 1; i > lowerRangeStart; i--) {
+                            record = records[i];
+                            row = record.__row;
+                            if (row !== undefined) {
+                                return row.index + 1;
+                            }
+                        }
+                    }
+                    for (let i = recordIndex + 1; i < recordCount; i++) {
+                        record = records[i];
+                        row = record.__row;
+                        if (row !== undefined) {
+                            return row.index;
+                        }
+                    }
+                    return this.rows.length;
+                } else {
+                    for (let i = recordIndex - 1; i >= 0; i--) {
                         record = records[i];
                         row = record.__row;
                         if (row !== undefined) {
                             return row.index + 1;
                         }
                     }
+                    return 0;
                 }
-                for (let i = recordIndex + 1; i < recordCount; i++) {
-                    record = records[i];
-                    row = record.__row;
-                    if (row !== undefined) {
-                        return row.index;
-                    }
-                }
-                return this.rows.length;
-            } else {
-                for (let i = recordIndex - 1; i >= 0; i--) {
-                    record = records[i];
-                    row = record.__row;
-                    if (row !== undefined) {
-                        return row.index + 1;
-                    }
-                }
-                return 0;
             }
         }
     }

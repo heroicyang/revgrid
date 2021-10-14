@@ -21,6 +21,7 @@ const generateTsLoaderBlock = (filename) => ({
                 use: {
                     loader: 'ts-loader',
                     options: {
+                        projectReferences: true,
                         configFile: path.resolve(__dirname, filename),
                     },
                 },
@@ -35,9 +36,9 @@ const generateUmdConfig = (isDev) => {
         ...generateCommonConfig(isDev),
         ...generateTsLoaderBlock('tsconfig.esm.json'),
         output: {
-            filename: isDev ? './bundles/umd/hypegrid.js' : './bundles/umd/hypegrid.min.js',
+            filename: isDev ? './bundles/umd/revgrid.js' : './bundles/umd/revgrid.min.js',
             library: {
-                name: 'hypegrid',
+                name: 'revgrid',
                 type: 'umd',
             }
         },
@@ -49,7 +50,7 @@ const generateEsmConfig = (isDev) => {
         ...generateCommonConfig(isDev),
         ...generateTsLoaderBlock('tsconfig.esm.json'),
         output: {
-            filename: isDev ? './bundles/esm/hypegrid.js' : './bundles/esm/hypegrid.min.js',
+            filename: isDev ? './bundles/esm/revgrid.js' : './bundles/esm/revgrid.min.js',
             library: {
                 type: 'module',
             }

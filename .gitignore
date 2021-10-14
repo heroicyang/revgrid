@@ -26,3 +26,6 @@ debug.log
 /test/dist
 /tsbuildinfo
 tsconfig.esm.tsbuildinfo
+
+# make sure pack tarballs are not accidentally commited
+*.tgz
