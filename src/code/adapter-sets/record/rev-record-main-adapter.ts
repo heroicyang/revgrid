@@ -692,8 +692,6 @@ export class RevRecordMainAdapter implements MainDataModel {
     }
 
     private repopulateAll(reindex: boolean, recent: boolean): void {
-        this.checkConsistency();
-
         const prevRowCount = this._rows.length;
 
         if (reindex) {
