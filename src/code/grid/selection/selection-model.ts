@@ -510,105 +510,121 @@ export class SelectionModel {
     }
 
     adjustForRowsInserted(rowIndex: number, rowCount: number) {
-        this.beginChange();
-        try {
-            const selections = this._selections;
-            let changed = false;
-            for (let i = this._selections.length - 1; i >= 0; i--) {
-                const selection = selections[i];
-                if (selection.adjustForRowsInserted(rowIndex, rowCount)) {
-                // if (adjustedSelection !== undefined) {
-                //     selections[i] = adjustedSelection;
-                    changed = true;
+        const selections = this._selections;
+        const selectionCount = selections.length;
+        if (selectionCount > 0) {
+            this.beginChange();
+            try {
+                let changed = false;
+                for (let i = selectionCount - 1; i >= 0; i--) {
+                    const selection = selections[i];
+                    if (selection.adjustForRowsInserted(rowIndex, rowCount)) {
+                    // if (adjustedSelection !== undefined) {
+                    //     selections[i] = adjustedSelection;
+                        changed = true;
+                    }
                 }
-            }
 
-            if (changed) {
-                this.flagChanged(false);
+                if (changed) {
+                    this.flagChanged(false);
+                }
+            } finally {
+                this.endChange();
             }
-        } finally {
-            this.endChange();
         }
     }
 
     adjustForRowsDeleted(rowIndex: number, rowCount: number) {
-        this.beginChange();
-        try {
-            const selections = this._selections;
-            let changed = false;
-            for (let i = this._selections.length - 1; i >= 0; i--) {
-                const selection = selections[i];
-                const adjustmentResult = selection.adjustForRowsDeleted(rowIndex, rowCount);
-                if (adjustmentResult === null) {
-                    selections.splice(i, 1);
-                } else {
-                    if (adjustmentResult) {
-                        changed = true;
+        const selections = this._selections;
+        const selectionCount = selections.length;
+        if (selectionCount > 0) {
+            this.beginChange();
+            try {
+                let changed = false;
+                for (let i = selectionCount - 1; i >= 0; i--) {
+                    const selection = selections[i];
+                    const adjustmentResult = selection.adjustForRowsDeleted(rowIndex, rowCount);
+                    if (adjustmentResult === null) {
+                        selections.splice(i, 1);
+                    } else {
+                        if (adjustmentResult) {
+                            changed = true;
+                        }
                     }
                 }
-            }
 
-            if (changed) {
-                this.flagChanged(false);
+                if (changed) {
+                    this.flagChanged(false);
+                }
+            } finally {
+                this.endChange();
             }
-        } finally {
-            this.endChange();
         }
     }
 
     adjustForRowsMoved(oldRowIndex: number, newRowIndex: number, count: number) {
-        this.beginChange();
-        try {
-            // this could probably be better optimised
-            this.adjustForRowsDeleted(oldRowIndex, count);
-            this.adjustForRowsInserted(newRowIndex, count);
-        } finally {
-            this.endChange();
+        const selections = this._selections;
+        const selectionCount = selections.length;
+        if (selectionCount > 0) {
+            this.beginChange();
+            try {
+                // this could probably be better optimised
+                this.adjustForRowsDeleted(oldRowIndex, count);
+                this.adjustForRowsInserted(newRowIndex, count);
+            } finally {
+                this.endChange();
+            }
         }
     }
 
     adjustForColumnsInserted(columnIndex: number, columnCount: number) {
-        this.beginChange();
-        try {
-            const selections = this._selections;
-            let changed = false;
-            for (let i = this._selections.length - 1; i >= 0; i--) {
-                const selection = selections[i];
-                if (selection.adjustForColumnsInserted(columnIndex, columnCount)) {
-                    changed = true;
+        const selections = this._selections;
+        const selectionCount = selections.length;
+        if (selectionCount > 0) {
+            this.beginChange();
+            try {
+                let changed = false;
+                for (let i = this._selections.length - 1; i >= 0; i--) {
+                    const selection = selections[i];
+                    if (selection.adjustForColumnsInserted(columnIndex, columnCount)) {
+                        changed = true;
+                    }
                 }
-            }
 
-            if (changed) {
-                this.flagChanged(false);
+                if (changed) {
+                    this.flagChanged(false);
+                }
+            } finally {
+                this.endChange();
             }
-        } finally {
-            this.endChange();
         }
     }
 
     adjustForColumnsDeleted(columnIndex: number, columnCount: number) {
-        this.beginChange();
-        try {
-            const selections = this._selections;
-            let changed = false;
-            for (let i = this._selections.length - 1; i >= 0; i--) {
-                const selection = selections[i];
-                const adjustedResult = selection.adjustForColumnsDeleted(columnIndex, columnCount);
-                if (adjustedResult === null) {
-                    selections.splice(i, 1);
-                } else {
-                    if (adjustedResult) {
-                        changed = true;
+        const selections = this._selections;
+        const selectionCount = selections.length;
+        if (selectionCount > 0) {
+            this.beginChange();
+            try {
+                let changed = false;
+                for (let i = this._selections.length - 1; i >= 0; i--) {
+                    const selection = selections[i];
+                    const adjustedResult = selection.adjustForColumnsDeleted(columnIndex, columnCount);
+                    if (adjustedResult === null) {
+                        selections.splice(i, 1);
+                    } else {
+                        if (adjustedResult) {
+                            changed = true;
+                        }
                     }
                 }
-            }
 
-            if (changed) {
-                this.flagChanged(false);
+                if (changed) {
+                    this.flagChanged(false);
+                }
+            } finally {
+                this.endChange();
             }
-        } finally {
-            this.endChange();
         }
     }
 }

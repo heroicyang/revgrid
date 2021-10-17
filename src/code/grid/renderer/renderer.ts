@@ -283,8 +283,8 @@ export class Renderer {
         this._renderActioner.renderAllRowsDeleted();
     }
 
-    renderRowCountChanged() {
-        this._renderActioner.renderRowCountChanged();
+    renderRowsLoaded() {
+        this._renderActioner.renderRowsLoaded();
     }
 
     renderRowsMoved(oldRowIndex: number, newRowIndex: number, rowCount: number) {

@@ -25,7 +25,7 @@ import { SchemaModel } from './grid-public-api';
 import { DateFormatter, Localization, NumberFormatter } from './lib/localization';
 import { Point, WritablePoint } from './lib/point';
 import { Rectangle, RectangleInterface } from './lib/rectangle';
-import { AssertError, OptionsError } from './lib/revgrid-error';
+import { AssertError } from './lib/revgrid-error';
 import { MainSubgrid } from './main-subgrid';
 import { CellModel } from './model/cell-model';
 import { DataModel } from './model/data-model';
@@ -214,7 +214,7 @@ export class Revgrid implements SelectionDetail {
         options = options ?? {};
 
         this.properties = new GridPropertiesAccessor(this);
-        this.loadDefaultProperties();
+        this.properties.loadDefaults();
         if (options?.gridProperties !== undefined) {
             this.properties.merge(options.gridProperties);
         }
@@ -259,7 +259,7 @@ export class Revgrid implements SelectionDetail {
         //         this.setBehavior(options); // also sets options.data
         //     }
         // }
-        this.reset(options, false);
+        this.reset(options.adapterSet, undefined, false);
 
         this.reindex();
 
@@ -461,15 +461,19 @@ export class Revgrid implements SelectionDetail {
      * @param options.subgrids - Consumed by {@link Behavior#reset}.
      * If omitted, previously established subgrids list is reused.
      */
-    reset(options?: Revgrid.Options, loadProperties = true) {
-        if (loadProperties) {
-            this.loadDefaultProperties();
-            if (options?.gridProperties !== undefined) {
-                this.properties.merge(options.gridProperties);
-            }
+    reset(
+        adapterSet: GridProperties.AdapterSet | undefined,
+        nonDefaultProperties: Partial<GridProperties> | undefined,
+        removeAllEventListeners = false
+    ) {
+        if (nonDefaultProperties !== undefined) {
+            this.properties.loadDefaults();
+            this.properties.merge(nonDefaultProperties);
         }
 
-        this.removeAllEventListeners();
+        if (removeAllEventListeners) {
+            this.removeAllEventListeners();
+        }
 
         this.clearMouseDown();
         this.dragExtent = Point.create(0, 0);
@@ -487,47 +491,19 @@ export class Revgrid implements SelectionDetail {
         this.setHoverCell(undefined);
         this.scrollingNow = false;
 
-
-        if (options?.adapterSet !== undefined) {
+        if (adapterSet !== undefined) {
             this._modelCallbackManager.reset(); // will unsubscribe from SchemaModel and DataModels
             this.destroySubgrids();
 
-            let schemaModel = options.adapterSet.schemaModel;
+            let schemaModel = adapterSet.schemaModel;
             if (typeof schemaModel === 'function') {
                 schemaModel = new schemaModel();
             }
             this._columnsManager.schemaModel = schemaModel;
             this._modelCallbackManager.setSchemaModel(this._columnsManager.schemaModel);
 
-            if  (options.adapterSet.subgrids.length > 0) {
-                this.setSubgrids(options.adapterSet.subgrids);
-            }
-        } else {
-            const adapterSet = this.properties.adapterSet;
-            if (adapterSet !== undefined) {
-                if (this.subgrids.length > 0) {
-                    // keep existing
-                    this.mainSubgrid.reset();
-                } else {
-                    this._modelCallbackManager.reset(); // will unsubscribe from SchemaModel and DataModels
-                    this.destroySubgrids();
-
-                    let schemaModel = options.adapterSet.schemaModel;
-                    if (typeof schemaModel === 'function') {
-                        schemaModel = new schemaModel();
-                    }
-                    this._columnsManager.schemaModel = schemaModel;
-                    this._modelCallbackManager.setSchemaModel(this._columnsManager.schemaModel);
-                    const gridPropertiesSubgrids = this.properties.adapterSet.subgrids;
-                    if (gridPropertiesSubgrids !== undefined && gridPropertiesSubgrids.length > 0) {
-                        this.setSubgrids(gridPropertiesSubgrids);
-                    } else {
-                        throw new OptionsError('RRSG39964', 'Subgrids not specified in options');
-                        // this.setSubgrids([Subgrid.RoleEnum.main]);
-                    }
-                }
-            } else {
-                throw new OptionsError('RRSG39965', 'Adapter not specified in options or properties');
+            if  (adapterSet.subgrids.length > 0) {
+                this.setSubgrids(adapterSet.subgrids);
             }
         }
 
@@ -540,9 +516,11 @@ export class Revgrid implements SelectionDetail {
 
         this.renderer.reset();
         this.canvas.resize();
-        this.behaviorChanged();
+        // this.behaviorChanged();
 
-        this.refreshProperties();
+        this.behaviorShapeChanged();
+        // this.behavior.defaultRowHeight = null;
+        // this._columnsManager.autosizeAllColumns();
     }
 
     /** pluginSpec
@@ -754,18 +732,13 @@ export class Revgrid implements SelectionDetail {
      * @param properties - A simple properties hash.
      */
     addProperties(properties: Partial<GridProperties>) {
-        this.properties.merge(properties);
-        this.refreshProperties();
-    }
-
-    /**
-     * @todo deprecate this in favor of making properties dynamic instead (for those that need to be)
-     * @desc Utility function to push out properties if we change them.
-     */
-    refreshProperties() {
-        this.behaviorShapeChanged();
-        this.behavior.defaultRowHeight = null;
-        this._columnsManager.autosizeAllColumns();
+        const result = this.properties.merge(properties);
+        if (result) {
+            this.behaviorShapeChanged();
+            // this.behavior.defaultRowHeight = null;
+            // this._columnsManager.autosizeAllColumns();
+        }
+        return result;
     }
 
     /**
@@ -784,8 +757,10 @@ export class Revgrid implements SelectionDetail {
      */
     addState(state: Record<string, unknown>, settingState = false) {
         this.behavior.addState(state, settingState);
-        this.refreshProperties();
-        this.behaviorChanged();
+        this.behaviorShapeChanged();
+        // this.behavior.defaultRowHeight = null;
+        // this._columnsManager.autosizeAllColumns();
+        // this.behaviorChanged();
     }
 
     getState() {
@@ -4175,19 +4150,6 @@ export class Revgrid implements SelectionDetail {
             }
         }
 
-        router.rowCountChangedEvent = (dataModel) => {
-            this.beginDataChange();
-            try {
-                this.renderer.modelUpdated();
-                if (dataModel === this.mainDataModel) {
-                    this.selectionModel.clear();
-                }
-                this.renderer.renderRowCountChanged();
-            } finally {
-                this.endDataChange();
-            }
-        };
-
         router.rowsMovedEvent = (dataModel, oldRowIndex, newRowIndex, rowCount) => {
             this.beginDataChange();
             try {
@@ -4200,6 +4162,19 @@ export class Revgrid implements SelectionDetail {
                 this.endDataChange();
             }
         }
+
+        router.rowsLoadedEvent = (dataModel) => {
+            this.beginDataChange();
+            try {
+                this.renderer.modelUpdated();
+                if (dataModel === this.mainDataModel) {
+                    this.selectionModel.clear();
+                }
+                this.renderer.renderRowsLoaded();
+            } finally {
+                this.endDataChange();
+            }
+        };
 
         router.invalidateAllEvent = () => {
             this.renderer.modelUpdated();

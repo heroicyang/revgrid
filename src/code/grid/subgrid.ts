@@ -2,7 +2,7 @@ import { CellModel } from '../grid/model/cell-model';
 import { DataModel } from '../grid/model/data-model';
 import { MetaModel } from '../grid/model/meta-model';
 import { ModelCallbackRouter } from '../grid/model/model-callback-router';
-import { ModelUpdateId, SchemaModel } from '../grid/model/schema-model';
+import { SchemaModel } from '../grid/model/schema-model';
 import { CellEditor } from './cell-editor/cell-editor';
 import { cellEditorFactory } from './cell-editor/cell-editor-factory';
 import { CellPainter } from './cell-painter/cell-painter';
@@ -364,17 +364,6 @@ export namespace Subgrid {
         metaModel?: MetaModel | MetaModel.Constructor,
         cellModel?: CellModel | CellModel.Constructor,
     }
-
-    /** @internal */
-    export type SchemaLoadedHandler = (this: void) => ModelUpdateId;
-    /** @internal */
-    export type RowCountChangedHandler = (this: void) => ModelUpdateId;
-    /** @internal */
-    export type AllDataInvalidatedHandler = (this: void, subgrid: Subgrid) => ModelUpdateId;
-    /** @internal */
-    export type RowDataInvalidatedHandler = (this: void, subgrid: Subgrid, rowIndex: number) => ModelUpdateId;
-    /** @internal */
-    export type CellDataInvalidatedHandler = (this: void, subgrid: Subgrid, allColumnIndex: number, rowIndex: number) => ModelUpdateId;
 
     /** @internal */
     export class DataRowProxy {

@@ -24,7 +24,7 @@ export class ModelCallbackRouter {
     rowsInsertedEvent: ModelCallbackRouter.RowsInsertedEvent;
     rowsDeletedEvent: ModelCallbackRouter.RowsDeletedEvent;
     allRowsDeletedEvent: ModelCallbackRouter.AllRowsDeletedEvent;
-    rowCountChangedEvent: ModelCallbackRouter.RowCountChangedEvent;
+    rowsLoadedEvent: ModelCallbackRouter.RowsLoadedEvent;
     rowsMovedEvent: ModelCallbackRouter.RowsMovedEvent;
     invalidateAllEvent: ModelCallbackRouter.InvalidateAllEvent;
     invalidateRowsEvent: ModelCallbackRouter.InvalidateRowsEvent;
@@ -101,8 +101,8 @@ export class ModelCallbackRouter {
                 rowsInserted: (rowIndex, rowCount) => this.handleRowsInserted(dataModel, rowIndex, rowCount),
                 rowsDeleted: (rowIndex, rowCount) => this.handleRowsDeleted(dataModel, rowIndex, rowCount),
                 allRowsDeleted: () => this.handleAllRowsDeleted(dataModel),
-                rowCountChanged: () => this.handleRowCountChanged(dataModel),
                 rowsMoved: (oldRowIndex, newRowIndex, rowCount) => this.handleRowsMoved(dataModel, oldRowIndex, newRowIndex, rowCount),
+                rowsLoaded: () => this.handleRowsLoaded(dataModel),
                 invalidateAll: () => this.handleInvalidateAll(),
                 invalidateRows: (rowIndex, count) => this.handleInvalidateRows(rowIndex, count),
                 invalidateRow: (rowIndex) => this.handleInvalidateRow(rowIndex),
@@ -317,18 +317,18 @@ export class ModelCallbackRouter {
     }
 
     /** @internal */
-    private handleRowCountChanged(dataModel: DataModel) {
-        if (!this._destroyed) {
-            this.rowCountChangedEvent(dataModel);
-            this.tryNotifyUndefinedDetailedModelEvent('rev-data-row-count-changed');
-        }
-    }
-
-    /** @internal */
     private handleRowsMoved(dataModel: DataModel, oldRowIndex: number, newRowIndex: number, rowCount: number) {
         if (!this._destroyed) {
             this.rowsMovedEvent(dataModel, oldRowIndex, newRowIndex, rowCount);
             this.tryNotifyUndefinedDetailedModelEvent('rev-data-rows-moved');
+        }
+    }
+
+    /** @internal */
+    private handleRowsLoaded(dataModel: DataModel) {
+        if (!this._destroyed) {
+            this.rowsLoadedEvent(dataModel);
+            this.tryNotifyUndefinedDetailedModelEvent('rev-data-row-count-changed');
         }
     }
 
@@ -379,7 +379,7 @@ export namespace ModelCallbackRouter {
     export type RowsInsertedEvent = (this: void, dataModel: DataModel, rowIndex: number, rowCount: number) => void;
     export type RowsDeletedEvent = (this: void, dataModel: DataModel, rowIndex: number, rowCount: number) => void;
     export type AllRowsDeletedEvent = (this: void, dataModel: DataModel) => void;
-    export type RowCountChangedEvent = (this: void, dataModel: DataModel) => void;
+    export type RowsLoadedEvent = (this: void, dataModel: DataModel) => void;
     export type RowsMovedEvent = (this: void, dataModel: DataModel, oldRowIndex: number, newRowIndex: number, rowCount: number) => void;
     export type InvalidateAllEvent = (this: void) => void;
     export type InvalidateRowsEvent = (this: void, rowIndex: number, count: number) => void;

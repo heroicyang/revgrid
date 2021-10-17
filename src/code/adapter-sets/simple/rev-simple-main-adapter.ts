@@ -34,7 +34,7 @@ export class MainSimpleAdapter implements MainDataModel {
          * @type {object[]}
          */
         this._data = data;
-        this._callbackListeners.forEach((listener) => listener.invalidateAll());
+        this._callbackListeners.forEach((listener) => listener.rowsLoaded());
     }
 
     // setData(data: LocalDataRowObject[] | (() => LocalDataRowObject[]), apply?: boolean) {

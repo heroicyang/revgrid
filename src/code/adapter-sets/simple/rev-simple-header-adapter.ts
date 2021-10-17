@@ -35,6 +35,6 @@ export class HeaderSimpleAdapter implements DataModel {
 
     reset(rowCount: number) {
         this._rowCount = rowCount;
-        this._callbackListeners.forEach((listener) => listener.invalidateAll());
+        this._callbackListeners.forEach((listener) => listener.rowsLoaded());
     }
 }

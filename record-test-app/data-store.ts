@@ -231,9 +231,9 @@ export namespace RecordStore {
         constructor(readonly name: string) {}
     }
 
-    export class RowIndexGridField extends BaseGridField {
+    export class RecordIndexGridField extends BaseGridField {
         constructor() {
-            super("RowIndex");
+            super("RecIndex");
         }
 
         // Don't implement GetFieldValue
@@ -276,7 +276,7 @@ export namespace RecordStore {
     }
 
     // Here, we implement these as new classes
-    export const rowIndexGridField: RevRecordField = new RowIndexGridField();
+    export const recordIndexGridField: RevRecordField = new RecordIndexGridField();
     export const intValGridField: RevRecordField = new IntValGridField();
     export const strValGridField: RevRecordField = new StrValGridField();
     // Or we have a helper class that lets you specify a name and function for GetFieldValue
@@ -299,7 +299,7 @@ export namespace RecordStore {
     );
 
     export const fieldDefinitions: RevRecordField[] = [
-        rowIndexGridField,
+        recordIndexGridField,
         hiddenStrValGridField,
         intValGridField,
         strValGridField,

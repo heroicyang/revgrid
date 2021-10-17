@@ -2,7 +2,6 @@
 import { GridProperties } from './grid-properties';
 import { AssertError } from './lib/revgrid-error';
 import { HorizontalWheelScrollingAllowed, TextTruncateType } from './lib/types';
-import { SchemaModel } from './model/schema-model';
 
 /**
  * This module lists the properties that can be set on a {@link Hypergrid} along with their default values.
@@ -67,15 +66,6 @@ export const defaultGridProperties: Required<GridProperties> = {
      * @type {number}
      */
     wheelVFactor: 0.05,
-
-    /**
-     * @summary List of subgrids by
-     * @desc Restrict usage here to strings (naming data models) or arrays consisting of such a string + constructor arguments. That is, avoid {@link subgridSpec}'s function and object overloads and {@link subgridConstructorRef} function overload.
-     */
-    adapterSet: {
-        schemaModel: undefined as SchemaModel,
-        subgrids: [],
-    },
 
     /**
      * The font for data cells.

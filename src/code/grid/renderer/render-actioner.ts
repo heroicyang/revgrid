@@ -93,7 +93,7 @@ export class RenderActioner {
         }
     }
 
-    renderRowCountChanged() {
+    renderRowsLoaded() {
         this.beginChange();
         try {
             this.queueRecalculateViewAction();

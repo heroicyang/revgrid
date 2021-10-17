@@ -30,6 +30,16 @@ export class RevRecordRowMap {
         }
     }
 
+    hasRecord(record: RevRecord) {
+        const recordIndex = record.index;
+        if (recordIndex >= this.records.length) {
+            return false;
+        } else {
+            // got this record if it matches entry at recordIndex
+            return this.records[recordIndex] === record;
+        }
+    }
+
     insertRecord(record: RevRecord) {
         this.records.splice(record.index, 0, record);
         const row = record.__row;

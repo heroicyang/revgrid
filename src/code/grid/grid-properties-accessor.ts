@@ -318,15 +318,6 @@ export class GridPropertiesAccessor implements GridProperties {
     get wheelVFactor() { return this.grid.sbVScroller?.deltaYFactor ?? defaultGridProperties.wheelVFactor; }
     set wheelVFactor(factor) { this.grid.sbVScroller.deltaYFactor = factor; }
 
-    get adapterSet() { return this.var.adapterSet; }
-    set adapterSet(adapter: GridProperties.AdapterSet) {
-        this.var.adapterSet = adapter;
-
-        if (this.grid.behavior) {
-            this.grid.setSubgrids(adapter.subgrids);
-        }
-    }
-
     /**
      * @memberOf module:dynamicProperties
      */
@@ -587,8 +578,9 @@ export class GridPropertiesAccessor implements GridProperties {
         GridProperties.assign(defaultGridProperties, this._raw);
     }
 
+    /** @returns true if any properties were modified - otherwise false */
     merge(properties: Partial<GridProperties>) {
-        GridProperties.assign(properties, this._raw);
+        return GridProperties.assign(properties, this._raw);
     }
 }
 
@@ -596,7 +588,6 @@ export namespace GridPropertiesAccessor {
     export type Constructor = new(grid: Revgrid) => GridPropertiesAccessor;
 
     export interface Var {
-        adapterSet: GridProperties.AdapterSet;
         features: string[];
         gridPainter: string;
         gridBorder: boolean | string;
@@ -609,7 +600,6 @@ export namespace GridPropertiesAccessor {
     export namespace Var {
         export function createDefault(): Var {
             const result: Var = {
-                adapterSet: defaultGridProperties.adapterSet,
                 features: defaultGridProperties.features,
                 gridPainter: defaultGridProperties.gridPainter,
                 gridBorder: defaultGridProperties.gridBorder,

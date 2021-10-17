@@ -42,8 +42,8 @@ export class Behavior {
 
     // Start RowProperties Mixin
     /** @internal */
-    private _height: number;
-    defaultRowHeight: number;
+    // private _height: number;
+    // defaultRowHeight: number;
     // End RowProperties Mixin
 
     // Start DataModel Mixin
@@ -51,19 +51,19 @@ export class Behavior {
     // End DataModel Mixin
 
     // Start RowProperties Mixin
-    get height() {
-        return this._height || this.defaultRowHeight;
-    }
-    set height(height: number) {
-        height = Math.max(5, Math.ceil(height));
-        if (isNaN(height)) {
-            height = undefined;
-        }
-        if (height !== this._height) {
-            this._height = height; // previously set as not enumerable
-            this.grid.behaviorStateChanged();
-        }
-    }
+    // get height() {
+    //     return this._height || this.defaultRowHeight;
+    // }
+    // set height(height: number) {
+    //     height = Math.max(5, Math.ceil(height));
+    //     if (isNaN(height)) {
+    //         height = undefined;
+    //     }
+    //     if (height !== this._height) {
+    //         this._height = height; // previously set as not enumerable
+    //         this.grid.behaviorStateChanged();
+    //     }
+    // }
     // End RowProperties Mixin
 
     constructor(
@@ -187,7 +187,7 @@ export class Behavior {
     addState(properties: Record<string, unknown>, settingState: boolean) {
         if (settingState) {
             // clear all table state
-            this.grid.loadDefaultProperties();
+            this.grid.properties.loadDefaults();
             this.grid.createColumns();
         }
 

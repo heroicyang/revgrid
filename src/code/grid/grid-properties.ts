@@ -226,7 +226,6 @@ export interface GridProperties {
     sortOnHiddenColumns: boolean;
     /** Display cell font with strike-through line drawn over it. */
     strikeThrough: boolean;
-    adapterSet: GridProperties.AdapterSet;
     themeName: string;
     /** How to truncate text. */
     textTruncateType: TextTruncateType | undefined;
@@ -403,17 +402,25 @@ export namespace GridProperties {
     //     return navKey;
     // }
 
-    /** @internal */
-    export function assign(source: Partial<GridProperties>, target: GridProperties): void {
-        Object.keys(source).forEach((key) => {
-            let value = source[key];
+    /** @internal
+     * @returns true if any properties changed - otherwise false
+     */
+    export function assign(source: Partial<GridProperties>, target: GridProperties): boolean {
+        const sourceKeys = Object.keys(source);
+        if (sourceKeys.length === 0) {
+            return false;
+        } else {
+            for (const key of sourceKeys) {
+                let value = source[key];
 
-            if (typeof value === 'object') {
-                value = deepClone(value);
+                if (typeof value === 'object') {
+                    value = deepClone(value);
+                }
+
+                target[key] = value;
             }
-
-            target[key] = value;
-        });
+            return true;
+        }
     }
 
     /** @internal */
@@ -431,5 +438,5 @@ export namespace GridProperties {
 
 export interface LoadableGridProperties extends GridProperties {
     loadDefaults(): void;
-    merge(properties: Partial<GridProperties>): void;
+    merge(properties: Partial<GridProperties>): boolean;
 }

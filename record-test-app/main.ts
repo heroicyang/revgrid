@@ -230,11 +230,11 @@ export class Main {
         }
         this._cellPaddingTextboxElement.onchange = () => this.handleUiCellPaddingChange()
 
-        // const incrementCellPaddingButtonElement = document.querySelector('#incrementCellPaddingButton') as HTMLButtonElement;
-        // if (incrementCellPaddingButtonElement === null) {
-        //     throw new Error('incrementCellPaddingButton not found');
-        // }
-        // incrementCellPaddingButtonElement.onclick = () => this.handleUiIncrementCellPaddingAction()
+        const incrementCellPaddingButtonElement = document.querySelector('#incrementCellPaddingButton') as HTMLButtonElement;
+        if (incrementCellPaddingButtonElement === null) {
+            throw new Error('incrementCellPaddingButton not found');
+        }
+        incrementCellPaddingButtonElement.onclick = () => this.handleUiIncrementCellPaddingAction()
 
         const decrementRowHeightButtonElement = document.querySelector('#decrementRowHeightButton') as HTMLButtonElement;
         if (decrementRowHeightButtonElement === null) {
@@ -597,7 +597,7 @@ export class Main {
     }
 
     private handleUiEnableLargeHighlightChange() {
-        this._mainRecordAdapter.invalidateAll(true);
+        this._mainRecordAdapter.invalidateAll();
     }
 
     private handleUiRowOrderReversedChange() {
@@ -1023,7 +1023,7 @@ export class Main {
         if (fieldCount > 0 && this._recordStore.recordCount > 0) {
             let fieldIdx = Math.floor(Math.random() * fieldCount);
 
-            if (this._fieldAdapter.getField(fieldIdx) === RecordStore.rowIndexGridField) {
+            if (this._fieldAdapter.getField(fieldIdx) === RecordStore.recordIndexGridField) {
                 fieldIdx += 2;
             }
 

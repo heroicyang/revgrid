@@ -91,7 +91,8 @@ export interface DataModel {
      * @param rowIndex - Grid row index.
      * @returns Unique Id of row specified by rowIndex.
      */
-    getRowId?(rowIndex: number): number;
+    getRowIdFromIndex?(rowIndex: number): unknown;
+    getRowIndexFromId?(rowId: unknown): number | undefined;
 
     /**
      * @desc Get a cell's value given its column & row indexes.
@@ -210,9 +211,8 @@ export namespace DataModel {
         rowsInserted: (this: void, rowIndex: number, rowCount: number) => void;
         rowsDeleted: (this: void, rowIndex: number, rowCount: number) => void;
         allRowsDeleted: (this: void) => void;
-        /** Try to use rowsInserted, rowsDeleted, allRowsDeleted instead of rowCountChanged. These provide better optimisations and control of selection. */
-        rowCountChanged: (this: void) => void;
         rowsMoved: (this: void, oldRowIndex: number, newRowIndex: number, rowCount: number) => void;
+        rowsLoaded: (this: void) => void;
         invalidateAll: (this: void) => void;
         invalidateRows: (this: void, rowIndex: number, count: number) => void;
         invalidateRow: (this: void, rowIndex: number) => void;

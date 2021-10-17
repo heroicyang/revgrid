@@ -888,7 +888,9 @@ export interface DataModel {
     // (undocumented)
     getRowCount(): number;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
-    getRowId?(rowIndex: number): number;
+    getRowIdFromIndex?(rowIndex: number): unknown;
+    // (undocumented)
+    getRowIndexFromId?(rowId: unknown): number | undefined;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     getValue(schema: SchemaModel.Column, rowIndex: number): DataModel.DataValue;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
@@ -937,11 +939,12 @@ export namespace DataModel {
         invalidateRowColumns: (this: void, rowIndex: number, schemaColumnIndex: number, columnCount: number) => void;
         // (undocumented)
         invalidateRows: (this: void, rowIndex: number, count: number) => void;
-        rowCountChanged: (this: void) => void;
         // (undocumented)
         rowsDeleted: (this: void, rowIndex: number, rowCount: number) => void;
         // (undocumented)
         rowsInserted: (this: void, rowIndex: number, rowCount: number) => void;
+        // (undocumented)
+        rowsLoaded: (this: void) => void;
         // (undocumented)
         rowsMoved: (this: void, oldRowIndex: number, newRowIndex: number, rowCount: number) => void;
     }
@@ -1242,8 +1245,6 @@ export namespace EventName {
 
 // @public (undocumented)
 export interface GridProperties {
-    // (undocumented)
-    adapterSet: GridProperties.AdapterSet;
     autoSelectColumns: boolean;
     autoSelectRows: boolean;
     // (undocumented)
@@ -1490,7 +1491,7 @@ export namespace GridProperties {
         subgrids: Subgrid.Spec[];
     }
     // @internal (undocumented)
-    export function assign(source: Partial<GridProperties>, target: GridProperties): void;
+    export function assign(source: Partial<GridProperties>, target: GridProperties): boolean;
     // (undocumented)
     export interface Calculators {
         // (undocumented)
@@ -1696,6 +1697,10 @@ export class MainSubgrid extends Subgrid {
     // (undocumented)
     lastEdgeSelection: [x: number, y: number];
     // (undocumented)
+    requestStashSelections(): void;
+    // (undocumented)
+    requestUnstashSelections(): void;
+    // (undocumented)
     reset(): void;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@summary" is not defined in this configuration
     select(ox: number, oy: number, ex: number, ey: number): void;
@@ -1712,15 +1717,11 @@ export class MainSubgrid extends Subgrid {
     // (undocumented)
     selectRows(y1: number, y2?: number): void;
     // (undocumented)
-    stashSelections(): void;
-    // (undocumented)
     toggleSelectAllRows(): void;
     // (undocumented)
     toggleSelectColumn(x: number, shiftKeyDown: boolean, ctrlKeyDown: boolean): void;
     // (undocumented)
     toggleSelectRow(y: number, shiftKeyDown: boolean): void;
-    // (undocumented)
-    unstashSelections(): void;
 }
 
 // @public (undocumented)
@@ -1730,7 +1731,7 @@ export namespace MainSubgrid {
         // (undocumented)
         columnName: string;
         // (undocumented)
-        rowId: number;
+        rowId: unknown;
     }
 }
 
@@ -2052,7 +2053,7 @@ export class Revgrid implements SelectionDetail {
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     addInternalEventListener<T extends EventName>(eventName: T, listener: Canvas.EventListener<T>): void;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
-    addProperties(properties: Partial<GridProperties>): void;
+    addProperties(properties: Partial<GridProperties>): boolean;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     addState(state: Record<string, unknown>, settingState?: boolean): void;
     // (undocumented)
@@ -2522,9 +2523,6 @@ export class Revgrid implements SelectionDetail {
     //
     // (undocumented)
     readonly properties: LoadableGridProperties;
-    // Warning: (tsdoc-undefined-tag) The TSDoc tag "@todo" is not defined in this configuration
-    // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
-    refreshProperties(): void;
     // (undocumented)
     registerCellPainter(typeName: string, constructor: CellPainter.Constructor): void;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@summary" is not defined in this configuration
@@ -2551,7 +2549,7 @@ export class Revgrid implements SelectionDetail {
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
     // Warning: (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
-    reset(options?: Revgrid.Options, loadProperties?: boolean): void;
+    reset(adapterSet: GridProperties.AdapterSet | undefined, nonDefaultProperties: Partial<GridProperties> | undefined, removeAllEventListeners?: boolean): void;
     // (undocumented)
     resetGridBorder(edge?: string): void;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
@@ -3018,7 +3016,9 @@ export class RevRecordMainAdapter implements MainDataModel {
     // (undocumented)
     getRowCount(): number;
     // (undocumented)
-    getRowId(rowIndex: number): number;
+    getRowIdFromIndex(rowIndex: number): unknown;
+    // (undocumented)
+    getRowIndexFromId(rowId: unknown): number | undefined;
     // (undocumented)
     getRowIndexFromRecordIndex(recordIndex: RevRecordIndex): number | undefined;
     // (undocumented)
@@ -3026,9 +3026,7 @@ export class RevRecordMainAdapter implements MainDataModel {
     // (undocumented)
     getValue(schemaColumn: RevRecordFieldAdapter.SchemaColumn, rowIndex: number): DataModel.DataValue;
     // (undocumented)
-    invalidateAll(recent?: boolean): void;
-    // (undocumented)
-    invalidateExisting(): void;
+    invalidateAll(): void;
     // (undocumented)
     invalidateFields(fieldIndexes: RevRecordFieldIndex[]): void;
     // (undocumented)
@@ -3072,6 +3070,10 @@ export class RevRecordMainAdapter implements MainDataModel {
     recordsDeleted(recordIndex: number, count: number): void;
     // (undocumented)
     recordsInserted(firstInsertedRecordIndex: RevRecordIndex, count: number, recent?: boolean): void;
+    // (undocumented)
+    recordsLoaded(recent?: boolean): void;
+    // (undocumented)
+    recordsSpliced(recordIndex: RevRecordIndex, deleteCount: number, insertCount: number): void;
     // (undocumented)
     get recordUpdatedRecentDuration(): number;
     set recordUpdatedRecentDuration(value: number);
@@ -3366,10 +3368,6 @@ export class Subgrid {
 // @public (undocumented)
 export namespace Subgrid {
     // @internal (undocumented)
-    export type AllDataInvalidatedHandler = (this: void, subgrid: Subgrid) => ModelUpdateId;
-    // @internal (undocumented)
-    export type CellDataInvalidatedHandler = (this: void, subgrid: Subgrid, allColumnIndex: number, rowIndex: number) => ModelUpdateId;
-    // @internal (undocumented)
     export class DataRowProxy {
         // (undocumented)
         ____columnNames: string[];
@@ -3400,12 +3398,6 @@ export namespace Subgrid {
         // (undocumented)
         summary = "summary"
     }
-    // @internal (undocumented)
-    export type RowCountChangedHandler = (this: void) => ModelUpdateId;
-    // @internal (undocumented)
-    export type RowDataInvalidatedHandler = (this: void, subgrid: Subgrid, rowIndex: number) => ModelUpdateId;
-    // @internal (undocumented)
-    export type SchemaLoadedHandler = (this: void) => ModelUpdateId;
     // (undocumented)
     export interface Spec {
         // (undocumented)

@@ -17,7 +17,9 @@ export class MainSubgrid extends Subgrid {
     // More Hypegrid and behavior logic should be moved into here
 
     /** @internal */
-    private _stashedSelectedRowIds: number[] | undefined;
+    private _nestedStashSelectionsRequestCount = 0;
+    /** @internal */
+    private _stashedSelectedRowIds: unknown[] | undefined;
     /** @internal */
     private _stashedSelectedColumnNames: string[] | undefined;
     /** @internal */
@@ -488,33 +490,16 @@ export class MainSubgrid extends Subgrid {
         this._grid.repaint();
     }
 
-
-
-    stashSelections() {
-        if (!this.stashSingleFirstCellSelection()) {
-            this.stashRowSelections();
-            this.stashColumnSelections();
+    requestStashSelections() {
+        if (this._nestedStashSelectionsRequestCount++ === 0) {
+            this.stashSelections();
         }
     }
 
-    unstashSelections() {
-        // selectionModel should be moved into Subgrid
-        this.selectionModel.reset();
-        this.selectionModel.beginChange();
-        try {
-            if (!this.unstashSingleFirstCellSelection()) {
-                // only unstash Row and Column if single cell was not unstashed
-                this.unstashRowSelections();
-                this.unstashColumnSelections();
-            }
-        } finally {
-            this.selectionModel.endChange();
+    requestUnstashSelections() {
+        if (--this._nestedStashSelectionsRequestCount === 0) {
+            this.unstashSelections();
         }
-
-        // make sure nothing stashed
-        this._stashedSelectedRowIds = undefined;
-        this._stashedSelectedColumnNames = undefined;
-        this._stashedSelectedSingleFirstCellPosition = undefined;
     }
 
     /**
@@ -584,16 +569,43 @@ export class MainSubgrid extends Subgrid {
 
     /** @internal */
     private handleDataPreReindexEvent() {
-        this.stashSelections();
+        this.requestStashSelections();
         this._grid.renderer.modelUpdated();
     }
 
     /** @internal */
     private handleDataPostReindexEvent() {
         const grid = this._grid;
-        this.unstashSelections();
+        this.requestUnstashSelections();
         grid.behaviorShapeChanged();
         grid.renderer.modelUpdated();
+    }
+
+    private stashSelections() {
+        if (!this.stashSingleFirstCellSelection()) {
+            this.stashRowSelections();
+            this.stashColumnSelections();
+        }
+        this.selectionModel.clear();
+    }
+
+    private unstashSelections() {
+        this.selectionModel.reset();
+        this.selectionModel.beginChange();
+        try {
+            if (!this.unstashSingleFirstCellSelection()) {
+                // only unstash Row and Column if single cell was not unstashed
+                this.unstashRowSelections();
+                this.unstashColumnSelections();
+            }
+        } finally {
+            this.selectionModel.endChange();
+        }
+
+        // make sure nothing stashed
+        this._stashedSelectedRowIds = undefined;
+        this._stashedSelectedColumnNames = undefined;
+        this._stashedSelectedSingleFirstCellPosition = undefined;
     }
 
     /**
@@ -608,7 +620,7 @@ export class MainSubgrid extends Subgrid {
         if (gridProps.restoreRowSelections) {
             if (gridProps.rowSelection) {
                 const selectedRows = this.getSelectedRows();
-                this._stashedSelectedRowIds = selectedRows.map( (selectedRowIndex) => this.dataModel.getRowId(selectedRowIndex) );
+                this._stashedSelectedRowIds = selectedRows.map( (selectedRowIndex) => this.dataModel.getRowIdFromIndex(selectedRowIndex) );
             }
         }
     }
@@ -626,22 +638,30 @@ export class MainSubgrid extends Subgrid {
             this._stashedSelectedSingleFirstCellPosition = undefined; // make sure
 
             const rowCount = this._grid.getRowCount();
-            let selectedRowCount = rowIds.length;
+            let rowIdCount = rowIds.length;
             const gridRowIndexes = [];
             const dataModel = this.dataModel;
             const selectionModel = this.selectionModel;
 
-            for (let rowIndex = 0; selectedRowCount > 0 && rowIndex < rowCount; ++rowIndex) {
-                const rowId = dataModel.getRowId(rowIndex);
-                const rowSelected = rowIds.includes(rowId);
-                if (rowSelected) {
-                    gridRowIndexes.push(rowIndex);
-                    // delete recordIndexes[i]; // might make indexOf increasingly faster as deleted elements are not enumerable
-                    selectedRowCount--; // count down so we can bail early if all found
+            if (dataModel.getRowIndexFromId !== undefined) {
+                for (let i = 0; i < rowIdCount; i++) {
+                    const rowId = rowIds[i];
+                    const rowIndex = dataModel.getRowIndexFromId(rowId);
+                    if (rowIndex !== undefined) {
+                        selectionModel.selectRows(rowIndex);
+                    }
+                }
+            } else {
+                for (let rowIndex = 0; rowIdCount > 0 && rowIndex < rowCount; ++rowIndex) {
+                    const rowId = dataModel.getRowIdFromIndex(rowIndex);
+                    const rowSelected = rowIds.includes(rowId);
+                    if (rowSelected) {
+                        gridRowIndexes.push(rowIndex);
+                        selectionModel.selectRows(rowIndex);
+                        rowIdCount--; // count down so we can bail early if all found
+                    }
                 }
             }
-
-            gridRowIndexes.forEach((gridRowIndex) => selectionModel.selectRows(gridRowIndex));
         }
     }
 
@@ -701,7 +721,7 @@ export class MainSubgrid extends Subgrid {
                     const firstSelectedCell = selection.firstSelectedCell;
                     this._stashedSelectedSingleFirstCellPosition = {
                         columnName: this._columnsManager.getActiveColumn(firstSelectedCell.x).name,
-                        rowId: this.dataModel.getRowId(firstSelectedCell.y),
+                        rowId: this.dataModel.getRowIdFromIndex(firstSelectedCell.y),
                     };
                     stashed = true;
                 }
@@ -723,19 +743,21 @@ export class MainSubgrid extends Subgrid {
 
             const selectedColumnIndex = this._columnsManager.getActiveColumnIndexByName(columnName);
             if (selectedColumnIndex >= 0) {
-                const rowCount = this._grid.getRowCount();
                 const dataModel = this.dataModel;
-                let selectedRowIndex: number | undefined;
-                for (let rowIndex = 0; rowIndex < rowCount; ++rowIndex) {
-                    const rowId = dataModel.getRowId(rowIndex);
-                    if (rowId === selectedRowId) {
-                        selectedRowIndex = rowIndex;
-                        break;
+                if (dataModel.getRowIndexFromId !== undefined) {
+                    const rowIndex = dataModel.getRowIndexFromId(selectedRowId);
+                    if (rowIndex !== undefined) {
+                        this.select(selectedColumnIndex, rowIndex, 0, 0);
                     }
-                }
-
-                if (selectedRowIndex !== undefined) {
-                    this.select(selectedColumnIndex, selectedRowIndex, 0, 0);
+                } else {
+                    const rowCount = this._grid.getRowCount();
+                    for (let rowIndex = 0; rowIndex < rowCount; ++rowIndex) {
+                        const rowId = dataModel.getRowIdFromIndex(rowIndex);
+                        if (rowId === selectedRowId) {
+                            this.select(selectedColumnIndex, rowIndex, 0, 0);
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -748,6 +770,6 @@ export class MainSubgrid extends Subgrid {
 export namespace MainSubgrid {
     export interface StashedSelectedSingleFirstCellPosition {
         columnName: string;
-        rowId: number;
+        rowId: unknown;
     }
 }
