@@ -1,6 +1,6 @@
 # Revgrid
 
-[![NPM version](https://img.shields.io/npm/v/revgrid)](https://www.npmjs.com/package/revgrid) [![License](https://img.shields.io/github/license/regrid/revgrid)](https://img.shields.io/github/license/revgrid/revgrid)
+[![NPM version](https://img.shields.io/npm/v/revgrid)](https://www.npmjs.com/package/revgrid) [![License](https://img.shields.io/github/license/revgrid/revgrid)](https://img.shields.io/github/license/revgrid/revgrid)
 
 Revgrid is a canvas based virtual grid focusing on realtime data display and performance. Data is injected into the grid using adapters built on schema/data interfaces.
 

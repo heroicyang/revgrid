@@ -30,12 +30,7 @@ export class RevRecordRecentChanges {
 
     private _beginMultipleChangesCount = 0;
 
-    /** Maximum minimum timeout period. Timeouts can be up to this length irrespective of duration specified.
-     * Set to greater than 0 if timeout throttling active */
-    private _throttlingMaxMinimumTimeout = 0;
-    private _throttlingMaxMinimumTimeoutForced = false;
-
-    private _nextExpiryTimeoutHandle: ReturnType<typeof setInterval> | undefined;
+    private _nextExpiryTimeoutHandle: ReturnType<typeof setTimeout> | undefined;
     private _nextExpiryTimeoutTargetTime: RevRecordSysTick.Time = RevRecordSysTick.now();
 
     constructor(
@@ -58,14 +53,6 @@ export class RevRecordRecentChanges {
     endMultipleChanges() {
         if (--this._beginMultipleChangesCount === 0) {
             this.checkConsistency();
-        }
-    }
-
-    setThrottlingMaxMinimumTimeout(value: number) {
-        this._throttlingMaxMinimumTimeout = value;
-        if (value === 0 && this._throttlingMaxMinimumTimeoutForced) {
-            this._throttlingMaxMinimumTimeoutForced = false;
-            this.processNextExpiryTimeout();
         }
     }
 
@@ -579,10 +566,6 @@ export class RevRecordRecentChanges {
             let duration = nextExpiryTimeoutTime - RevRecordSysTick.now();
             if (duration < 0) {
                 duration = 0;
-            }
-            if (duration < this._throttlingMaxMinimumTimeout) {
-                duration = this._throttlingMaxMinimumTimeout;
-                this._throttlingMaxMinimumTimeoutForced = true;
             }
             this._nextExpiryTimeoutHandle = setTimeout(() => this.processNextExpiryTimeout(), duration);
         }

@@ -1,6 +1,6 @@
 import { CellEvent } from '../cell/cell-event';
 import { EventDetail } from '../event/event-detail';
-import { Effect, effectFactory } from '../lib/dom/effects';
+import { Effect, effectFactory } from '../effects/effects';
 import { Formatter } from '../lib/localization';
 import { WritablePoint } from '../lib/point';
 import { RectangleInterface } from '../lib/rectangle';

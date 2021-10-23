@@ -12,7 +12,7 @@ export namespace Animation {
         intervalRate: number;
         dirty: boolean;
         animating: boolean;
-        animate: () => void;
+        animate: () => boolean;
         onTick: (() => void) | undefined;
         // internal
         lastAnimateTime: number;
@@ -41,24 +41,28 @@ export namespace Animation {
     }
 
     export function animate(animator: Animator, now: number) {
+        let animated: boolean;
         animator.animating = true;
         try {
-            animator.animate();
+            animated = animator.animate();
         } finally {
             animator.animating = false;
         }
-        animator.dirty = false;
-        animator.lastAnimateTime = now;
-        /* - (elapsed % interval);*/
-        if (animator.isContinuous) {
-            animator.currentAnimateCount++;
-            if (now - animator.lastFPSComputeTime >= 1000) {
-                animator.currentFPS = (animator.currentAnimateCount * 1000) / (now - animator.lastFPSComputeTime);
-                animator.currentAnimateCount = 0;
-                animator.lastFPSComputeTime = now;
+
+        if (animated) {
+            animator.dirty = false;
+            animator.lastAnimateTime = now;
+            /* - (elapsed % interval);*/
+            if (animator.isContinuous) {
+                animator.currentAnimateCount++;
+                if (now - animator.lastFPSComputeTime >= 1000) {
+                    animator.currentFPS = (animator.currentAnimateCount * 1000) / (now - animator.lastFPSComputeTime);
+                    animator.currentAnimateCount = 0;
+                    animator.lastFPSComputeTime = now;
+                }
             }
         }
-}
+    }
 
     function start() {
         if (animationFrameHandle !== undefined || active) {

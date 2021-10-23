@@ -9,6 +9,8 @@ export class RevRecordFieldAdapter implements SchemaModel {
     private readonly _fields: RevRecordField[] = [];
     private readonly _fieldNameLookup = new Map<string, RevRecordField>();
     private readonly _fieldIndexLookup = new Map<RevRecordField, RevRecordFieldIndex>();
+    private readonly _fieldValueDependsOnRecordIndexFieldIndexes: RevRecordFieldIndex[] = [];
+    private readonly _fieldValueDependsOnRowIndexFieldIndexes: RevRecordFieldIndex[] = [];
 
     private _callbackListener: SchemaModel.CallbackListener;
 
@@ -26,6 +28,18 @@ export class RevRecordFieldAdapter implements SchemaModel {
         this._fieldIndexLookup.set(field, fieldIndex);
         this._fieldNameLookup.set(field.name, field);
         this._fields.push(field);
+
+        if (field.valueDependsOnRecordIndex) {
+            if (!this._fieldValueDependsOnRecordIndexFieldIndexes.includes(fieldIndex)) {
+                this._fieldValueDependsOnRecordIndexFieldIndexes.push(fieldIndex);
+            }
+        }
+
+        if (field.valueDependsOnRowIndex) {
+            if (!this._fieldValueDependsOnRowIndexFieldIndexes.includes(fieldIndex)) {
+                this._fieldValueDependsOnRowIndexFieldIndexes.push(fieldIndex);
+            }
+        }
 
         // Update Hypergrid Schema
         const schemaColumn: RevRecordFieldAdapter.SchemaColumn = {
@@ -131,18 +145,8 @@ export class RevRecordFieldAdapter implements SchemaModel {
         return this._fields.filter((field) => filterCallback(field));
     }
 
-    getRecordIndexFieldIndexes() {
-        // Get fields whose value is the record index
-        const fieldCount = this._fields.length;
-        const result = new Array<RevRecordFieldIndex>();
-        for (let i = 0; i < fieldCount; i++) {
-            const field = this._fields[i];
-            if (field.getFieldValue === undefined) {
-                result.push(i);
-            }
-        }
-
-        return result;
+    getFieldValueDependsOnRecordIndexFieldIndexes() {
+        return this._fieldValueDependsOnRecordIndexFieldIndexes;
     }
 
     getSchema(): readonly SchemaModel.Column[] {

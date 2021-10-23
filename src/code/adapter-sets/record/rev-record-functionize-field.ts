@@ -7,9 +7,9 @@ export abstract class RevRecordFunctionizeField implements RevRecordField {
     constructor(public readonly name: string) {
     }
 
-    getFieldValue: (this: void, record: never) => unknown;
-    compareField: (this: void, left: never, right: never) => number;
-    compareFieldDesc: (this: void, left: never, right: never) => number;
+    getValue: (this: void, record: never) => unknown;
+    compare: (this: void, left: never, right: never) => number;
+    compareDesc: (this: void, left: never, right: never) => number;
 }
 
 /**
@@ -21,16 +21,16 @@ export class RevRecordSimpleFunctionizeField<Record> extends RevRecordFunctioniz
         compare?: (left: Record, right: Record) => number, compareDesc?: (left: Record, right: Record) => number) {
         super(name);
 
-        this.getFieldValue = value;
+        this.getValue = value;
 
         if (compare !== undefined) {
-            this.compareField = compare;
+            this.compare = compare;
 
             if (compareDesc === undefined) {
                 compareDesc = (left, right) => -compare(left, right);
             }
 
-            this.compareFieldDesc = compareDesc;
+            this.compareDesc = compareDesc;
         }
     }
 }
@@ -43,10 +43,10 @@ export class RevRecordNumericFunctionizeField<Record> extends RevRecordFunctioni
     constructor(name: string, value: (record: Record) => number) {
         super(name);
 
-        this.getFieldValue = value;
+        this.getValue = value;
 
-        this.compareField = (left: Record, right: Record) => value(right) - value(left);
-        this.compareFieldDesc = (left: Record, right: Record) => value(left) - value(right);
+        this.compare = (left: Record, right: Record) => value(right) - value(left);
+        this.compareDesc = (left: Record, right: Record) => value(left) - value(right);
     }
 }
 
@@ -58,10 +58,10 @@ export class RevRecordStringFunctionizeField<Record> extends RevRecordFunctioniz
     constructor(name: string, value: (record: Record) => string, options?: Intl.CollatorOptions) {
         super(name);
 
-        this.getFieldValue = value;
+        this.getValue = value;
 
-        this.compareField = (left: Record, right: Record) => value(right).localeCompare(value(left), undefined, options);
-        this.compareFieldDesc = (left: Record, right: Record) => value(left).localeCompare(value(right), undefined, options);
+        this.compare = (left: Record, right: Record) => value(right).localeCompare(value(left), undefined, options);
+        this.compareDesc = (left: Record, right: Record) => value(left).localeCompare(value(right), undefined, options);
     }
 }
 
@@ -73,9 +73,9 @@ export class RevRecordDateFunctionizeField<Record> extends RevRecordFunctionizeF
     constructor(name: string, value: (record: Record) => Date, /*options?: Intl.CollatorOptions*/) {
         super(name);
 
-        this.getFieldValue = value;
+        this.getValue = value;
 
-        this.compareField = (left: Record, right: Record) => value(right).getTime() - value(left).getTime();
-        this.compareFieldDesc = (left: Record, right: Record) => value(left).getTime() - value(right).getTime();
+        this.compare = (left: Record, right: Record) => value(right).getTime() - value(left).getTime();
+        this.compareDesc = (left: Record, right: Record) => value(left).getTime() - value(right).getTime();
     }
 }

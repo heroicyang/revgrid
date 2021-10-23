@@ -9,17 +9,15 @@ export interface RevRecordField {
     /**
      * Retrieves the value of a field for display purposes
      * @param record - The record to compare to
-     * Can be undefined to show the record index instead
      */
-    getFieldValue?(record: RevRecord): DataModel.DataValue;
+    getValue(record: RevRecord): DataModel.DataValue;
 
     /**
      * Compares two records based on this field for sorting in ascending order
      * @param left - The record on the left of the comparison
      * @param right - The record on the right of the comparison
-     * Can be undefined to disable sorting based on this field
      */
-    compareField?(left: RevRecord, right: RevRecord): number;
+    compare?(left: RevRecord, right: RevRecord): number;
 
     /**
      * Compares two records based on this field for sorting in descending order
@@ -27,7 +25,12 @@ export interface RevRecordField {
      * @param right - The record on the right of the comparison
      * Can be undefined to disable sorting based on this field
      */
-    compareFieldDesc?(left: RevRecord, right: RevRecord): number;
+    compareDesc?(left: RevRecord, right: RevRecord): number;
+
+    /** Set to true if field value depends on Record Index */
+    valueDependsOnRecordIndex?: boolean;
+    /** Set to true if field value depends on Row Index */
+    valueDependsOnRowIndex?: boolean;
 }
 
 /** @public */

@@ -948,7 +948,8 @@ const normals: Normals = {
 };
 
 function getNormal() {
-    const nav = window.navigator, ua = nav.userAgent;
+    const nav = window.navigator;
+    const ua = nav.userAgent;
     const platform = nav.platform.substr(0, 3).toLowerCase();
     const browser: keyof Browser = /Edge/.test(ua) ? 'edge' :
         /Opera|OPR|Chrome|Safari/.test(ua) ? 'webkit' :

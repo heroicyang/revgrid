@@ -229,6 +229,7 @@ export namespace RecordStore {
 
     abstract class BaseGridField implements RevRecordField {
         constructor(readonly name: string) {}
+        abstract getValue(record: Record): DataModel.DataValue;
     }
 
     export class RecordIndexGridField extends BaseGridField {
@@ -236,7 +237,9 @@ export namespace RecordStore {
             super("RecIndex");
         }
 
-        // Don't implement GetFieldValue
+        getValue(record: Record): DataModel.DataValue {
+            return record.index;
+        }
     }
 
     export class IntValGridField extends BaseGridField {
@@ -244,15 +247,15 @@ export namespace RecordStore {
             super("IntVal");
         }
 
-        getFieldValue(record: Record): DataModel.DataValue {
+        getValue(record: Record): DataModel.DataValue {
             return record.data[RecordStore.Record.Data.intValIndex];
         }
 
-        compareField(left: Record, right: Record): number {
+        compare(left: Record, right: Record): number {
             return right.data[RecordStore.Record.Data.intValIndex] - left.data[RecordStore.Record.Data.intValIndex];
         }
 
-        compareFieldDesc(left: Record, right: Record): number {
+        compareDesc(left: Record, right: Record): number {
             return left.data[RecordStore.Record.Data.intValIndex] - right.data[RecordStore.Record.Data.intValIndex];
         }
     }
@@ -262,15 +265,15 @@ export namespace RecordStore {
             super("fiStrVal");
         }
 
-        getFieldValue(record: Record): DataModel.DataValue {
+        getValue(record: Record): DataModel.DataValue {
             return record.data[RecordStore.Record.Data.strValIndex];
         }
 
-        compareField(left: Record, right: Record): number {
+        compare(left: Record, right: Record): number {
             return right.data[RecordStore.Record.Data.strValIndex].localeCompare(left.data[RecordStore.Record.Data.strValIndex]);
         }
 
-        compareFieldDesc(left: Record, right: Record): number {
+        compareDesc(left: Record, right: Record): number {
             return left.data[RecordStore.Record.Data.strValIndex].localeCompare(right.data[RecordStore.Record.Data.strValIndex]);
         }
     }
@@ -280,20 +283,20 @@ export namespace RecordStore {
     export const intValGridField: RevRecordField = new IntValGridField();
     export const strValGridField: RevRecordField = new StrValGridField();
     // Or we have a helper class that lets you specify a name and function for GetFieldValue
-    export const numberValGridField: RevRecordField = new RevRecordNumericFunctionizeField<Record>(
+    export const numberValGridField = new RevRecordNumericFunctionizeField<Record>(
         "fiDblVal",
         (record) => record.data[RecordStore.Record.Data.numberValIndex]
     );
-    export const dateValGridField: RevRecordField = new RevRecordDateFunctionizeField<Record>(
+    export const dateValGridField = new RevRecordDateFunctionizeField<Record>(
         "fiDateVal",
         (record) => record.data[RecordStore.Record.Data.dateValIndex]
     );
-    export const statusIdValGridField: RevRecordField = new RevRecordSimpleFunctionizeField<Record>(
+    export const statusIdValGridField = new RevRecordSimpleFunctionizeField<Record>(
         "fiStatusIdVal",
         (record) => record.data[RecordStore.Record.Data.statusIdIndex],
         (left, right) => right.data[RecordStore.Record.Data.statusIdIndex] - left.data[RecordStore.Record.Data.statusIdIndex]
     );
-    export const hiddenStrValGridField: RevRecordField = new RevRecordStringFunctionizeField<Record>(
+    export const hiddenStrValGridField = new RevRecordStringFunctionizeField<Record>(
         "fiHidden",
         (record) => record.data[RecordStore.Record.Data.strValIndex]
     );

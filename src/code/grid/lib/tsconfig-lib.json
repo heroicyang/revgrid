@@ -2,15 +2,16 @@
   "extends": "../../../../tsconfig.esm.json",
 
   "compilerOptions": {
+    "strictNullChecks": false,
+    "noImplicitAny": false,
     "composite": true,
-    "tsBuildInfoFile": "../../../../tsbuildinfo/record.tsbuildinfo"
+    "tsBuildInfoFile": "../../../../tsbuildinfo/lib.tsbuildinfo"
   },
 
   "include": [
-    "./*.ts"
+    "./**/*.ts"
   ],
 
   "references": [
-    { "path": "../../grid/grid-tsconfig.json" }
   ]
 }

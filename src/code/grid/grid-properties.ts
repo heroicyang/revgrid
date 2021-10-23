@@ -1,6 +1,6 @@
 import { CellEvent } from './cell/cell-event';
 import { defaultGridProperties } from './default-grid-properties';
-import { Effect } from './lib/dom/effects';
+import { Effect } from './effects/effects';
 import { Halign, HorizontalWheelScrollingAllowed, TextTruncateType } from './lib/types';
 import { deepClone } from './lib/utils';
 import { SchemaModel } from './model/schema-model';

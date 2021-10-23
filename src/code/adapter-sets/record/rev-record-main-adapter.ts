@@ -140,11 +140,7 @@ export class RevRecordMainAdapter implements MainDataModel {
         const fieldName = schemaColumn.name;
         const field = this._fieldAdapter.getFieldByName(fieldName);
 
-        if (field.getFieldValue === undefined) {
-            return this._recordRowMap.getRecordIndexFromRowIndex(rowIndex);
-        } else {
-            return field.getFieldValue(record);
-        }
+        return field.getValue(record);
     }
 
     allRecordsDeleted(): void {
@@ -405,7 +401,7 @@ export class RevRecordMainAdapter implements MainDataModel {
         try {
             // Locate and remove the corresponding Row
             const rowIndex = this._recordRowMap.removeRecord(recordIndex);
-            const recordIndexFieldIndexes = this._fieldAdapter.getRecordIndexFieldIndexes();
+            const recordIndexFieldIndexes = this._fieldAdapter.getFieldValueDependsOnRecordIndexFieldIndexes();
 
             if (rowIndex === undefined) {
                 // We didn't change any visible rows, since they were filtered, but their indexes may have changed, so invalidate
@@ -465,7 +461,7 @@ export class RevRecordMainAdapter implements MainDataModel {
 
                     this._recordRowMap.removeRecordsButNotRows(recordIndex, count); // rows will be deleted below
 
-                    const recordIndexFieldIndexes = this._fieldAdapter.getRecordIndexFieldIndexes();
+                    const recordIndexFieldIndexes = this._fieldAdapter.getFieldValueDependsOnRecordIndexFieldIndexes();
 
                     if (toBeDeletedDefinedRowCount === 0) {
                         // We didn't change any visible rows, since they were filtered, but their indexes may have changed, so invalidate
@@ -919,7 +915,7 @@ export class RevRecordMainAdapter implements MainDataModel {
     private updateSortComparer(specifiers: RevRecordMainAdapter.SortFieldSpecifier[]): void {
         const specifierCount = specifiers.length;
 
-        if (specifiers.length === 0 || (specifiers.length === 1 && this._fieldAdapter.fields[specifiers[0].fieldIndex].getFieldValue === undefined)) {
+        if (specifiers.length === 0) {
             // No sorting, or sort by a Row Index column
             this._sortFieldSpecifiers.length = 0;
             this._comparer = undefined;
@@ -972,21 +968,21 @@ export class RevRecordMainAdapter implements MainDataModel {
         const field = this._fieldAdapter.fields[specifier.fieldIndex];
         let comparer: RevRecordMainAdapter.SpecifierComparer | undefined;
 
-        const compareDefined = field.compareField !== undefined;
-        const compareDescDefined = field.compareFieldDesc !== undefined;
+        const compareDefined = field.compare !== undefined;
+        const compareDescDefined = field.compareDesc !== undefined;
 
         // make sure we capture this._fields and specifiers
         if (specifier.ascending) {
             if (compareDefined) {
                 comparer = (left, right) => {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    return this._fieldAdapter.fields[specifier.fieldIndex].compareField!(left.record, right.record);
+                    return this._fieldAdapter.fields[specifier.fieldIndex].compare!(left.record, right.record);
                 };
             } else {
                 if (compareDescDefined) {
                     comparer = (left, right) => {
                         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        return this._fieldAdapter.fields[specifier.fieldIndex].compareFieldDesc!(left.record, right.record);
+                        return this._fieldAdapter.fields[specifier.fieldIndex].compareDesc!(left.record, right.record);
                     };
                     specifier.ascending = false;
                 } else {
@@ -998,13 +994,13 @@ export class RevRecordMainAdapter implements MainDataModel {
             if (compareDescDefined) {
                 comparer = (left, right) => {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    return this._fieldAdapter.fields[specifier.fieldIndex].compareFieldDesc!(left.record, right.record);
+                    return this._fieldAdapter.fields[specifier.fieldIndex].compareDesc!(left.record, right.record);
                 };
             } else {
                 if (compareDefined) {
                     comparer = (left, right) => {
                         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        return this._fieldAdapter.fields[specifier.fieldIndex].compareField!(left.record, right.record);
+                        return this._fieldAdapter.fields[specifier.fieldIndex].compare!(left.record, right.record);
                     };
                     specifier.ascending = true;
                 } else {

@@ -77,20 +77,21 @@ export class Renderer {
      */
     visibleRows = new Renderer.VisibleRowArray();
 
-    visibleColumnsByIndex = new Array<Renderer.VisibleColumn>();  // array because number of columns will always be reasonable
-    visibleRowsByDataRowIndex = new Map<number, Renderer.VisibleRow>(); // hash because keyed by (fixed and) scrolled row indexes
+    private _visibleColumnsByIndex = new Array<Renderer.VisibleColumn>();  // array because number of columns will always be reasonable
+    private _visibleRowsByDataRowIndex = new Map<number, Renderer.VisibleRow>(); // hash because keyed by (fixed and) scrolled row indexes
 
     // I don't think this is used
-    insertionBounds = new Array<number>();
+    private _insertionBounds = new Array<number>();
 
-    lastKnowRowCount: number | undefined;
-    needsComputeCellsBounds = false;
+    private _lastKnowRowCount: number | undefined;
+    private _needsComputeCellsBounds = false;
 
     dataWindow: InclusiveRectangle;
 
     bounds: Renderer.Bounds;
 
     private _destroyed = false;
+    private _documentHidden = false;
 
     private readonly _animator: Animation.Animator;
     private readonly _renderActioner = new RenderActioner()
@@ -121,6 +122,8 @@ export class Renderer {
 
     private gridPainter: GridPainter;
 
+    private _pageVisibilityChangeListener = () => this.handlePageVisibilityChange();
+
     //the shared single item "pooled" cell object for drawing each cell
     private cell = {
         x: 0,
@@ -129,7 +132,6 @@ export class Renderer {
         height: 0
     }
 
-    private scrollHeight = 0;
     renderedCellPool = new Array<BeingPaintedCell>();
 
     get horizontalScrollableContentOverflowed() { return this._horizontalScrollableContentOverflowed; }
@@ -154,6 +156,8 @@ export class Renderer {
     ) {
         this._renderActioner.actionsEvent = (actions) => this.processRenderActions(actions);
 
+        document.addEventListener('visibilitychange', this._pageVisibilityChangeListener);
+
         this._animator = {
             isContinuous: this.properties.enableContinuousRepaint, // TODO properties should update this dynamically
             intervalRate: this.properties.repaintIntervalRate, // TODO properties should update this dynamically
@@ -175,6 +179,9 @@ export class Renderer {
 
     destroy() {
         this.resolveWaitModelRendered(invalidModelUpdateId);
+
+        document.removeEventListener('visibilitychange', this._pageVisibilityChangeListener);
+
         this._destroyed = true;
     }
 
@@ -187,7 +194,7 @@ export class Renderer {
         this.visibleColumns.length = 0;
         this.visibleRows.length = 0;
 
-        this.insertionBounds.length = 0;
+        this._insertionBounds.length = 0;
 
         this.renderedCellPool.length = 0;
 
@@ -696,11 +703,11 @@ export class Renderer {
     }
 
     computeCellsBounds(immediate = false) {
-        if (immediate) {
+        if (immediate || this._documentHidden) {
             this.internalComputeCellsBounds();
-            this.needsComputeCellsBounds = false;
+            this._needsComputeCellsBounds = false;
         } else {
-            this.needsComputeCellsBounds = true;
+            this._needsComputeCellsBounds = true;
             this.grid.repaint(); // a paint is needed to recognise needsComputeCellsBounds
         }
     }
@@ -709,41 +716,47 @@ export class Renderer {
      * @desc This is the entry point from fin-canvas.
      */
     paint() {
-        if (!this._destroyed) {
-            const gc = this._gc;
-            try {
-                gc.cache.save();
+        if (this._documentHidden) {
+            return false;
+        } else {
+            if (!this._destroyed) {
+                const gc = this._gc;
+                try {
+                    gc.cache.save();
 
-                this.paintGrid(gc);
-
-
-                if (this.grid.cellEditor) {
-                    this.grid.cellEditor.gridRenderedNotification();
-                }
-
-                // Grid render also calculates mix width for each column.
-                // Check here to see if there was a change and if so immediately re-render
-                // before end-of-thread so user sees only the results of the 2nd render.
-                // Mostly important on first render after setData. Note that stack overflow
-                // will not happen because this will only be called once per data change.
-                if (this.grid.checkColumnAutosizing()) {
                     this.paintGrid(gc);
+
+
+                    if (this.grid.cellEditor) {
+                        this.grid.cellEditor.gridRenderedNotification();
+                    }
+
+                    // Grid render also calculates mix width for each column.
+                    // Check here to see if there was a change and if so immediately re-render
+                    // before end-of-thread so user sees only the results of the 2nd render.
+                    // Mostly important on first render after setData. Note that stack overflow
+                    // will not happen because this will only be called once per data change.
+                    if (this.grid.checkColumnAutosizing()) {
+                        this.paintGrid(gc);
+                    }
+
+                    this.grid.fireSyntheticGridRenderedEvent();
+
+                    const lastModelUpdateId = this._lastModelUpdateId;
+                    if (this._lastRenderedModelUpdateId !== lastModelUpdateId) {
+                        this._lastRenderedModelUpdateId = lastModelUpdateId;
+                        // do not resolve in animation frame call back
+                        setTimeout(() => this.resolveWaitModelRendered(lastModelUpdateId), 0);
+                    }
+
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    gc.cache.restore();
                 }
-
-                this.grid.fireSyntheticGridRenderedEvent();
-
-                const lastModelUpdateId = this._lastModelUpdateId;
-                if (this._lastRenderedModelUpdateId !== lastModelUpdateId) {
-                    this._lastRenderedModelUpdateId = lastModelUpdateId;
-                    // do not resolve in animation frame call back
-                    setTimeout(() => this.resolveWaitModelRendered(lastModelUpdateId), 0);
-                }
-
-            } catch (e) {
-                console.error(e);
-            } finally {
-                gc.cache.restore();
             }
+
+            return true;
         }
     }
 
@@ -1052,18 +1065,18 @@ export class Renderer {
         grid.deferredBehaviorChange();
 
         const rowCount = grid.getRowCount();
-        if (rowCount !== this.lastKnowRowCount) {
+        if (rowCount !== this._lastKnowRowCount) {
             /*var newWidth = */ // this.renderResetRowHeaderColumnWidth(gc, rowCount);
             // if (newWidth !== this.handleColumnWidth) {
-                this.needsComputeCellsBounds = true;
+                this._needsComputeCellsBounds = true;
             //     this.handleColumnWidth = newWidth;
             // }
-            this.lastKnowRowCount = rowCount;
+            this._lastKnowRowCount = rowCount;
         }
 
-        if (this.needsComputeCellsBounds) {
+        if (this._needsComputeCellsBounds) {
             this.internalComputeCellsBounds();
-            this.needsComputeCellsBounds = false;
+            this._needsComputeCellsBounds = false;
 
             // Pre-fetch data if supported by data model
             if (grid.mainDataModel.fetchData) {
@@ -1147,9 +1160,9 @@ export class Renderer {
         }
 
         let vc: Renderer.VisibleColumn;
-        const vci = this.visibleColumnsByIndex;
+        const vci = this._visibleColumnsByIndex;
         let vr: Renderer.VisibleRow;
-        const vri = this.visibleRowsByDataRowIndex;
+        const vri = this._visibleRowsByDataRowIndex;
         const lastScrollableColumn = this.visibleColumns[visibleColumnsCount - 1]; // last column in scrollable section
         const lastScrollableRow = this.visibleRows[visibleRowsCount - 1]; // last row in scrollable data section
         const firstScrollableColumn = vci[this.dataWindow.origin.x];
@@ -1375,18 +1388,16 @@ export class Renderer {
             fixedOverlapH = fixedGapH - fixedWidthH;
         }
 
-        this.scrollHeight = 0;
-
         this.visibleColumns.length = 0;
         this.visibleColumns.gap = this.visibleColumns[-1] = this.visibleColumns[-2] = undefined;
 
         this.visibleRows.length = 0;
         this.visibleRows.gap = undefined;
 
-        this.visibleColumnsByIndex.length = 0;
-        this.visibleRowsByDataRowIndex.clear();
+        this._visibleColumnsByIndex.length = 0;
+        this._visibleRowsByDataRowIndex.clear();
 
-        this.insertionBounds.length = 0;
+        this._insertionBounds.length = 0;
 
         const gridWidth = bounds.width ?? grid.canvas.width; // horizontal pixel loop limit
         const C = grid.getActiveColumnCount();
@@ -1521,7 +1532,7 @@ export class Renderer {
 
                     const rightPlus1 = left + visibleWidth;
 
-                    this.visibleColumns[vcIndex] = this.visibleColumnsByIndex[c] = vc = {
+                    this.visibleColumns[vcIndex] = this._visibleColumnsByIndex[c] = vc = {
                         index: vcIndex,
                         activeColumnIndex: c,
                         column: columnsManager.getActiveColumn(c),
@@ -1570,7 +1581,7 @@ export class Renderer {
                     vcIndex++;
 
                     insertionBoundsCursor += Math.round(visibleWidth / 2) + previousInsertionBoundsCursorValue;
-                    this.insertionBounds.push(insertionBoundsCursor);
+                    this._insertionBounds.push(insertionBoundsCursor);
                     previousInsertionBoundsCursorValue = Math.round(visibleWidth / 2);
                 }
             }
@@ -1640,7 +1651,7 @@ export class Renderer {
                 }
 
                 if (isMainSubgrid) {
-                    this.visibleRowsByDataRowIndex.set(vy - base, vr);
+                    this._visibleRowsByDataRowIndex.set(vy - base, vr);
                 }
 
                 if (isSubgridEd && yEd === rowIndex) {
@@ -1789,6 +1800,10 @@ export class Renderer {
 
     setBounds(bounds: Renderer.Bounds) {
         return (this.bounds = bounds);
+    }
+
+    private handlePageVisibilityChange() {
+        this._documentHidden = document.hidden;
     }
 
     private resolveWaitModelRendered(lastModelUpdateId: number) {

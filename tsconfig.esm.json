@@ -17,8 +17,8 @@
   ],
 
   "references": [
-    { "path": "src/code/grid/grid-tsconfig.json" },
-    { "path": "src/code/adapter-sets/record/rev-record-tsconfig.json" },
-    { "path": "src/code/adapter-sets/simple/rev-simple-tsconfig.json" }
+    { "path": "src/code/grid/tsconfig-grid.json" },
+    { "path": "src/code/adapter-sets/record/tsconfig-rev-record.json" },
+    { "path": "src/code/adapter-sets/simple/tsconfig-rev-simple.json" }
   ]
 }

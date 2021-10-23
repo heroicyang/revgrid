@@ -1,11 +1,11 @@
 {
-  "extends": "../../../tsconfig.esm.json",
+  "extends": "../../../../tsconfig.esm.json",
 
   "compilerOptions": {
     "strictNullChecks": false,
     "noImplicitAny": false,
     "composite": true,
-    "tsBuildInfoFile": "../../../tsbuildinfo/grid.tsbuildinfo"
+    "tsBuildInfoFile": "../../../../tsbuildinfo/effects.tsbuildinfo"
   },
 
   "include": [

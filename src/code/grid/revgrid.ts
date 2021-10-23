@@ -17,7 +17,7 @@ import { EventDetail } from './event/event-detail';
 import { EventName } from './event/event-name';
 import { FeaturesManager } from './feature/features-manager';
 import { FeaturesSharedState } from './feature/features-shared-state';
-import { FinBar } from './finbar/finbar';
+import { FinBar } from './finbar/finbar-api';
 import { GridPainter } from './grid-painter/grid-painter';
 import { GridProperties, LoadableGridProperties } from './grid-properties';
 import { GridPropertiesAccessor } from './grid-properties-accessor';
@@ -130,7 +130,7 @@ export class Revgrid implements SelectionDetail {
     columnPropertiesConstructor: ColumnProperties.Constructor = ColumnPropertiesAccessor;
 
     private _repaintSetTimeoutId: ReturnType<typeof setTimeout>;
-    private _resizeSetTimeoutId: ReturnType<typeof setTimeout>;
+    private _resizeScrollbarsTimeoutHandle: ReturnType<typeof setTimeout>;
 
     private mouseCatcher = () => this.abortEditing();
 
@@ -328,8 +328,8 @@ export class Revgrid implements SelectionDetail {
         if (this._repaintSetTimeoutId !== undefined) {
             clearTimeout(this._repaintSetTimeoutId);
         }
-        if (this._resizeSetTimeoutId !== undefined) {
-            clearTimeout(this._resizeSetTimeoutId);
+        if (this._resizeScrollbarsTimeoutHandle !== undefined) {
+            clearTimeout(this._resizeScrollbarsTimeoutHandle);
         }
 
         const div = this.containerHtmlElement;
@@ -3864,9 +3864,9 @@ export class Revgrid implements SelectionDetail {
         this.sbHScroller.setViewportStart(viewportStart);
 
         // schedule to happen *after* the repaint
-        if (this._resizeSetTimeoutId === undefined) {
-            this._resizeSetTimeoutId = setTimeout(() => {
-                this._resizeSetTimeoutId = undefined;
+        if (this._resizeScrollbarsTimeoutHandle === undefined) {
+            this._resizeScrollbarsTimeoutHandle = setTimeout(() => {
+                this._resizeScrollbarsTimeoutHandle = undefined;
                 this.resizeScrollbars()
             }, 0);
         }

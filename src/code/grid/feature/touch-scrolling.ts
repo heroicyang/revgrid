@@ -2,13 +2,13 @@
 import { RenderedCell } from '../cell/rendered-cell';
 import { EventDetail } from '../event/event-detail';
 import { Feature } from '../feature/feature';
-import { FinBar } from '../finbar/finbar';
+import { FinBar } from '../finbar/finbar-api';
 
 export class TouchScrolling extends Feature {
 
     readonly typeName = TouchScrolling.typeName;
 
-    timer: ReturnType<typeof setTimeout>;
+    private _stepTimeoutHandle: ReturnType<typeof setTimeout>;
     private touches: RenderedCell.Bounds[];
 
     override handleTouchStart(eventDetail: EventDetail.Touch) {
@@ -59,26 +59,26 @@ export class TouchScrolling extends Feature {
         this.decelerateX(startTouch, currentTouch);
     }
 
-    getTouchedBounds(eventDetail: EventDetail.Touch) {
+    private getTouchedBounds(eventDetail: EventDetail.Touch) {
         const point = eventDetail.touches[0];
         const bounds = this.grid.getGridCellFromMousePoint(point).renderedCell.bounds;
         bounds.timestamp = Date.now();
         return bounds;
     }
 
-    decelerateY(startTouch: RenderedCell.Bounds, endTouch: RenderedCell.Bounds) {
+    private decelerateY(startTouch: RenderedCell.Bounds, endTouch: RenderedCell.Bounds) {
         const offset = endTouch.y - startTouch.y;
         const timeOffset = endTouch.timestamp - startTouch.timestamp;
         this.decelerate(this.grid.sbVScroller, offset, timeOffset);
     }
 
-    decelerateX(startTouch: RenderedCell.Bounds, endTouch: RenderedCell.Bounds) {
+    private decelerateX(startTouch: RenderedCell.Bounds, endTouch: RenderedCell.Bounds) {
         const offset = endTouch.x - startTouch.x;
         const timeOffset = endTouch.timestamp - startTouch.timestamp;
         this.decelerate(this.grid.sbHScroller, offset, timeOffset);
     }
 
-    decelerate(scroller: FinBar, offset: number, timeOffset: number) {
+    private decelerate(scroller: FinBar, offset: number, timeOffset: number) {
         const velocity = (Math.abs(offset) / timeOffset) * 100;
         const dir = -Math.sign(offset);
         const interval = this.getInitialInterval(velocity);
@@ -86,7 +86,7 @@ export class TouchScrolling extends Feature {
         this.step(scroller, velocity, dir, interval);
     }
 
-    step(scroller: FinBar, velocity: number, dir: number, interval: number) {
+    private step(scroller: FinBar, velocity: number, dir: number, interval: number) {
         if (velocity > 0) {
             const delta = this.getDelta(velocity);
             const index = scroller.index + (dir * delta);
@@ -99,14 +99,14 @@ export class TouchScrolling extends Feature {
             velocity -= TouchScrolling.DEC_STEP_SIZE;
 
             const nextInterval = this.updateInterval(interval, velocity);
-            this.timer = setTimeout(
+            this._stepTimeoutHandle = setTimeout(
                 () => this.step(scroller, velocity, dir, nextInterval),
                 interval
             );
         }
     }
 
-    getDelta(velocity: number) {
+    private getDelta(velocity: number) {
         if (velocity >= 180) {
             return 10;
         } else if (velocity >= 100) {
@@ -120,7 +120,7 @@ export class TouchScrolling extends Feature {
         }
     }
 
-    getInitialInterval(velocity: number) {
+    private getInitialInterval(velocity: number) {
         if (velocity >= 50) {
             return 5;
         } else if (velocity >= 25) {
@@ -130,7 +130,7 @@ export class TouchScrolling extends Feature {
         }
     }
 
-    updateInterval(interval: number, velocity: number) {
+    private updateInterval(interval: number, velocity: number) {
         if (interval >= TouchScrolling.MAX_INTERVAL) {
             return interval;
         }
@@ -148,8 +148,8 @@ export class TouchScrolling extends Feature {
         return interval + offset;
     }
 
-    stopDeceleration() {
-        clearTimeout(this.timer);
+    private stopDeceleration() {
+        clearTimeout(this._stepTimeoutHandle);
     }
 }
 

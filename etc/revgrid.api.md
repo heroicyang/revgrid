@@ -2876,11 +2876,13 @@ export abstract class RevRecordExternalError extends RevRecordError {
 
 // @public
 export interface RevRecordField {
-    compareField?(left: RevRecord, right: RevRecord): number;
-    compareFieldDesc?(left: RevRecord, right: RevRecord): number;
-    getFieldValue?(record: RevRecord): DataModel.DataValue;
+    compare?(left: RevRecord, right: RevRecord): number;
+    compareDesc?(left: RevRecord, right: RevRecord): number;
+    getValue(record: RevRecord): DataModel.DataValue;
     // (undocumented)
     readonly name: string;
+    valueDependsOnRecordIndex?: boolean;
+    valueDependsOnRowIndex?: boolean;
 }
 
 // @public (undocumented)
@@ -2914,9 +2916,9 @@ export class RevRecordFieldAdapter implements SchemaModel {
     // (undocumented)
     getFieldNames(): string[];
     // (undocumented)
-    getFilteredFields(filterCallback: (field: RevRecordField) => boolean): RevRecordField[];
+    getFieldValueDependsOnRecordIndexFieldIndexes(): number[];
     // (undocumented)
-    getRecordIndexFieldIndexes(): number[];
+    getFilteredFields(filterCallback: (field: RevRecordField) => boolean): RevRecordField[];
     // (undocumented)
     getSchema(): readonly SchemaModel.Column[];
     // (undocumented)
@@ -2945,11 +2947,11 @@ export type RevRecordFieldIndex = number;
 export abstract class RevRecordFunctionizeField implements RevRecordField {
     constructor(name: string);
     // (undocumented)
-    compareField: (this: void, left: never, right: never) => number;
+    compare: (this: void, left: never, right: never) => number;
     // (undocumented)
-    compareFieldDesc: (this: void, left: never, right: never) => number;
+    compareDesc: (this: void, left: never, right: never) => number;
     // (undocumented)
-    getFieldValue: (this: void, record: never) => unknown;
+    getValue: (this: void, record: never) => unknown;
     // (undocumented)
     readonly name: string;
 }
@@ -3483,27 +3485,27 @@ export type Writable<T> = {
 // src/code/grid/behavior.ts:34:50 - (tsdoc-reference-missing-dot) Expecting a period before the next component of a declaration reference
 // src/code/grid/behavior.ts:35:4 - (tsdoc-undefined-tag) The TSDoc tag "@abstract" is not defined in this configuration
 // src/code/grid/cell-editor/cell-editor-factory.ts:12:4 - (tsdoc-undefined-tag) The TSDoc tag "@classdesc" is not defined in this configuration
-// src/code/grid/lib/dom/effects.ts:4:4 - (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
-// src/code/grid/lib/dom/effects.ts:5:4 - (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
-// src/code/grid/lib/dom/effects.ts:5:20 - (tsdoc-param-tag-with-invalid-optional-name) The @param should not include a JSDoc-style optional name; it must not be enclosed in '[ ]' brackets.
-// src/code/grid/lib/dom/effects.ts:5:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
-// src/code/grid/lib/dom/effects.ts:6:23 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
-// src/code/grid/lib/dom/effects.ts:6:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
-// src/code/grid/lib/dom/effects.ts:6:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
-// src/code/grid/lib/dom/effects.ts:6:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
-// src/code/grid/lib/dom/effects.ts:7:20 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
-// src/code/grid/lib/dom/effects.ts:7:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
-// src/code/grid/lib/dom/effects.ts:7:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
-// src/code/grid/lib/dom/effects.ts:7:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
-// src/code/grid/lib/dom/effects.ts:8:18 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
-// src/code/grid/lib/dom/effects.ts:8:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
-// src/code/grid/lib/dom/effects.ts:8:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
-// src/code/grid/lib/dom/effects.ts:8:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
-// src/code/grid/lib/dom/effects.ts:9:18 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
-// src/code/grid/lib/dom/effects.ts:9:123 - (tsdoc-link-tag-destination-syntax) Unexpected character after link destination
-// src/code/grid/lib/dom/effects.ts:9:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
-// src/code/grid/lib/dom/effects.ts:9:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
-// src/code/grid/lib/dom/effects.ts:9:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
+// src/code/grid/effects/effects.ts:4:4 - (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
+// src/code/grid/effects/effects.ts:5:4 - (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+// src/code/grid/effects/effects.ts:5:20 - (tsdoc-param-tag-with-invalid-optional-name) The @param should not include a JSDoc-style optional name; it must not be enclosed in '[ ]' brackets.
+// src/code/grid/effects/effects.ts:5:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
+// src/code/grid/effects/effects.ts:6:23 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
+// src/code/grid/effects/effects.ts:6:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
+// src/code/grid/effects/effects.ts:6:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
+// src/code/grid/effects/effects.ts:6:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
+// src/code/grid/effects/effects.ts:7:20 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
+// src/code/grid/effects/effects.ts:7:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
+// src/code/grid/effects/effects.ts:7:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
+// src/code/grid/effects/effects.ts:7:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
+// src/code/grid/effects/effects.ts:8:18 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
+// src/code/grid/effects/effects.ts:8:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
+// src/code/grid/effects/effects.ts:8:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
+// src/code/grid/effects/effects.ts:8:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
+// src/code/grid/effects/effects.ts:9:18 - (tsdoc-escape-right-brace) The "}" character should be escaped using a backslash to avoid confusion with a TSDoc inline tag
+// src/code/grid/effects/effects.ts:9:123 - (tsdoc-link-tag-destination-syntax) Unexpected character after link destination
+// src/code/grid/effects/effects.ts:9:11 - (tsdoc-malformed-inline-tag) Expecting a TSDoc tag starting with "{@"
+// src/code/grid/effects/effects.ts:9:4 - (tsdoc-param-tag-with-invalid-name) The @param block should be followed by a valid parameter name: The identifier cannot non-word characters
+// src/code/grid/effects/effects.ts:9:11 - (tsdoc-param-tag-with-invalid-type) The @param block should not include a JSDoc-style '{type}'
 // src/code/grid/renderer/renderer.ts:30:4 - (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
 // src/code/grid/selection/selection-model.ts:12:4 - (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
 

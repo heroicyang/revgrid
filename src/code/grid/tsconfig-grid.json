@@ -1,0 +1,41 @@
+{
+  "extends": "../../../tsconfig.esm.json",
+
+  "compilerOptions": {
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "composite": true,
+    "tsBuildInfoFile": "../../../tsbuildinfo/grid.tsbuildinfo"
+  },
+
+  "include": [
+    "behavior.ts",
+    "default-grid-properties.ts",
+    "grid-properties-accessor.ts",
+    "grid-properties.ts",
+    "grid-public-api.ts",
+    "main-subgrid.ts",
+    "revgrid.ts",
+    "subgrid.ts",
+    "canvas/**/*.ts",
+    "cell/**/*.ts",
+    "cell-editor/**/*.ts",
+    "cell-painter/**/*.ts",
+    "column/**/*.ts",
+    "event/**/*.ts",
+    "feature/**/*.ts",
+    // "finbar/**/*.ts",
+    "grid-painter/**/*.ts",
+    // "lib/**/*.ts",
+    "model/**/*.ts",
+    "renderer/**/*.ts",
+    "selection/**/*.ts",
+    "template/**/*.ts"
+  ],
+
+  "references": [
+    { "path": "effects/tsconfig-effects.json" },
+    { "path": "finbar/tsconfig-finbar.json" },
+    { "path": "lib/tsconfig-lib.json" }
+  ]
+}
