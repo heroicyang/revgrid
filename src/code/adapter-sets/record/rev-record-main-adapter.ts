@@ -11,7 +11,7 @@ import { RevRecordStore } from './rev-record-store';
 import { RevRecordFieldIndex, RevRecordIndex, RevRecordInvalidatedValue, RevRecordValueRecentChangeTypeId } from './rev-record-types';
 
 /** @public */
-export class RevRecordMainAdapter implements MainDataModel {
+export class RevRecordMainAdapter implements MainDataModel, RevRecordStore.RecordsEventers {
     readonly mainDataModel = true;
 
     private readonly _rows: RevRecordRow[]; // Rows in grid - used for comparison and holding recent change info
@@ -32,6 +32,7 @@ export class RevRecordMainAdapter implements MainDataModel {
     private readonly _recentChanges: RevRecordRecentChanges;
 
     private _callbackListener: MainDataModel.CallbackListener;
+    private _recordStoreEventersSet = false;
 
     get recentChanges() { return this._recentChanges; }
     get rowCount(): number { return this._rows.length; }
@@ -90,6 +91,10 @@ export class RevRecordMainAdapter implements MainDataModel {
 
     addDataCallbackListener(value: MainDataModel.CallbackListener): void {
         this._callbackListener = value;
+        if (!this._recordStoreEventersSet) {
+            this._recordStore.setRecordEventers(this);
+            this._recordStoreEventersSet = true;
+        }
     }
 
     beginChange() {
@@ -130,7 +135,7 @@ export class RevRecordMainAdapter implements MainDataModel {
         }
     }
 
-    getValue(schemaColumn: RevRecordFieldAdapter.SchemaColumn, rowIndex: number): DataModel.DataValue {
+    getValue(schemaColumn: RevRecordField.SchemaColumn, rowIndex: number): DataModel.DataValue {
         if (this._rowOrderReversed) {
             rowIndex = this.reverseRowIndex(rowIndex);
         }

@@ -63,16 +63,28 @@
                 </fieldset>
                 <fieldset>
                     Performance: <span id="performanceTimeSpan"></span><br>
-                    <button id="performance30kButton" type="button" >Initialise with 30k Records</button><br>
-                    <button id="performance60kButton" type="button" >Initialise with 60k Records</button><br>
-                    <button id="performanceAddOneAtStartButton" type="button" >Add One Record (Start)</button><br>
-                    <button id="performanceAddOneAtMiddleButton" type="button" >Add One Record (Middle)</button><br>
-                    <button id="performanceAddOneAtEndButton" type="button" >Add One Record (End)</button><br>
-                    <button id="performanceDeleteOneAtStartButton" type="button" >Delete One Record (Start)</button><br>
-                    <button id="performanceDeleteOneAtMiddleButton" type="button" >Delete One Record (Middle)</button><br>
-                    <button id="performanceDeleteOneAtEndButton" type="button" >Delete One Record (End)</button><br>
-                    <button id="performanceModifyRecordsButton" type="button" >Mutate All Records</button><br>
-                    <button id="performanceModifyOneRecordButton" type="button" >Mutate One Record</button><br>
+                    <section class="performanceSection">
+                        <span>Initialise</span>
+                        <button id="performance30kButton" type="button" >30k Records</button><br>
+                        <button id="performance60kButton" type="button" >60k Records</button><br>
+                    </section>
+                    <section class="performanceSection">
+                        <span>Add 1 Record</span>
+                        <button id="performanceAddOneAtStartButton" type="button" >Start</button><br>
+                        <button id="performanceAddOneAtMiddleButton" type="button" >Middle</button><br>
+                        <button id="performanceAddOneAtEndButton" type="button" >End</button><br>
+                    </section>
+                    <section class="performanceSection">
+                        <span>Delete 1 Record</span>
+                        <button id="performanceDeleteOneAtStartButton" type="button" >Start</button><br>
+                        <button id="performanceDeleteOneAtMiddleButton" type="button" >Middle</button><br>
+                        <button id="performanceDeleteOneAtEndButton" type="button" >End</button><br>
+                    </section>
+                    <section class="performanceSection">
+                        <span>Mutate</span>
+                        <button id="performanceModifyRecordsButton" type="button" >All Records</button><br>
+                        <button id="performanceModifyOneRecordButton" type="button" >One Record</button><br>
+                    </section>
                 </fieldset>
             </form>
         </div>

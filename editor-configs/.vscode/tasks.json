@@ -35,7 +35,7 @@
 			"type": "npm",
 			"script": "testapp:build",
 			"problemMatcher": [
-				"$eslint-stylish"
+				"$ts-webpack"
 			],
 			"label": "npm: test-app:build",
 		},
@@ -43,7 +43,7 @@
 			"type": "npm",
 			"script": "testapp:serve",
 			"problemMatcher": [
-				"$eslint-stylish"
+				"$ts-webpack"
 			],
 			"label": "npm: test-app:serve",
 		},
@@ -51,7 +51,7 @@
 			"type": "npm",
 			"script": "recordtestapp:build",
 			"problemMatcher": [
-				"$eslint-stylish"
+				"$ts-webpack"
 			],
 			"label": "npm: record-test-app:build",
 		},
@@ -59,7 +59,7 @@
 			"type": "npm",
 			"script": "recordtestapp:serve",
 			"problemMatcher": [
-				"$eslint-stylish"
+				"$ts-webpack"
 			],
 			"label": "npm: record-test-app:serve",
 		}

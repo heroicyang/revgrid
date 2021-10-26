@@ -26,6 +26,13 @@ body {
     min-height: 0;
 }
 
+.performanceSection {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: .1em;
+}
+
 #gridInfoDiv {
 	flex: 0 0 auto;
 	display: grid;
@@ -34,7 +41,6 @@ body {
 }
 
 #gridHost {
-    display: block;
     position: relative;
     height: 100%;
     width: 100%;

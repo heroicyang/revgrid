@@ -1,7 +1,6 @@
 import { CellModel } from '../grid/model/cell-model';
 import { DataModel } from '../grid/model/data-model';
 import { MetaModel } from '../grid/model/meta-model';
-import { ModelCallbackRouter } from '../grid/model/model-callback-router';
 import { SchemaModel } from '../grid/model/schema-model';
 import { CellEditor } from './cell-editor/cell-editor';
 import { cellEditorFactory } from './cell-editor/cell-editor-factory';
@@ -37,7 +36,6 @@ export class Subgrid {
         /** @internal */
         protected readonly _columnsManager: ColumnsManager,
         /** @internal */
-        private readonly _modelCallbackManager: ModelCallbackRouter,
         public readonly role: Subgrid.Role,
         public readonly schemaModel: SchemaModel,
         public readonly dataModel: DataModel,
@@ -66,7 +64,6 @@ export class Subgrid {
 
         this.rowProxy = new Subgrid.DataRowProxy(this.schemaModel, this.dataModel);
         this._columnsManager.addBeforeCreateColumnsListener(this._columnsManagerBeforeCreateColumnsListener);
-        this._modelCallbackManager.registerDataModel(this.dataModel);
     }
 
     /** @internal */

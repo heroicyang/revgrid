@@ -1,5 +1,5 @@
 import { DataModel } from '../../grid/grid-public-api';
-import { RevRecordFieldAdapter } from './rev-record-field-adapter';
+import { RevRecordField } from './rev-record-field';
 
 /** @public */
 export class RevRecordHeaderAdapter implements DataModel {
@@ -10,7 +10,7 @@ export class RevRecordHeaderAdapter implements DataModel {
         this._dataCallbackListener = value;
     }
 
-    getValue(schemaColumn: RevRecordFieldAdapter.SchemaColumn): string {
+    getValue(schemaColumn: RevRecordField.SchemaColumn): string {
         return schemaColumn.header;
     }
 

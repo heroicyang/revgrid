@@ -38,6 +38,7 @@ export class ModelCallbackRouter {
     gridEvent: ModelCallbackRouter.GridEvent;
 
     private _destroyed = false;
+    private _enabled = false;
     private _schemaModel: SchemaModel | undefined;
     private _schemaCallbackListenerAdded = false;
     private _registeredDataModels = new Array<ModelCallbackRouter.RegisteredDataModel>();
@@ -53,40 +54,42 @@ export class ModelCallbackRouter {
         getActiveSchemaColumns: () => this.handleGetActiveSchemaColumns(),
     }
 
+    get enabled() { return this._enabled; }
+
     constructor(private readonly _gridProperties: GridProperties) {
     }
 
     destroy() {
-        this.reset();
-
+        this.disable();
         this._destroyed = true;
     }
 
     reset() {
-        for (const registeredDataModel of this._registeredDataModels) {
-            const callbackListener = registeredDataModel.callbackListener;
-            if (callbackListener !== undefined) {
-                const dataModel = registeredDataModel.dataModel;
-                if (dataModel.removeDataCallbackListener !== undefined) {
-                    dataModel.removeDataCallbackListener(callbackListener);
-                }
-            }
-        }
+        this.disable();
+        this._schemaModel = undefined;
+        this._registeredDataModels.length = 0;
+    }
 
-        if (this._schemaModel !== undefined) {
-            if (this._schemaCallbackListenerAdded && this._schemaModel.removeSchemaCallbackListener !== undefined) {
-                this._schemaModel.removeSchemaCallbackListener(this.schemaModelCallbackListener);
-                this._schemaCallbackListenerAdded = false;
-            }
-            this._schemaModel = undefined;
+    enable() {
+        if (!this._enabled) {
+            this._enabled = true;
+            this.enableSchemaCallbacks();
+            this.enableDataCallbacks();
+        }
+    }
+
+    disable() {
+        if (this._enabled) {
+            this.disableDataCallbacks();
+            this.disableSchemaCallbacks();
+            this._enabled = false;
         }
     }
 
     setSchemaModel(schemaModel: SchemaModel) {
         this._schemaModel = schemaModel;
-        if (this._schemaModel.addSchemaCallbackListener !== undefined) {
-            this._schemaModel.addSchemaCallbackListener(this.schemaModelCallbackListener);
-            this._schemaCallbackListenerAdded = true;
+        if (this._enabled) {
+            this.enableSchemaCallbacks();
         }
     }
 
@@ -118,7 +121,9 @@ export class ModelCallbackRouter {
                 mainCallbackListener.postReindex = () => this.handleDataPostReindex();
             }
 
-            dataModel.addDataCallbackListener(callbackListener);
+            if (this._enabled && dataModel.addDataCallbackListener !== undefined) {
+                dataModel.addDataCallbackListener(callbackListener);
+            }
         }
 
         const registeredDataModel: ModelCallbackRouter.RegisteredDataModel = {
@@ -128,6 +133,46 @@ export class ModelCallbackRouter {
         this._registeredDataModels.push(registeredDataModel);
 
         return index;
+    }
+
+    private enableSchemaCallbacks() {
+        if (this._schemaModel.addSchemaCallbackListener !== undefined) {
+            this._schemaCallbackListenerAdded = true;
+            this._schemaModel.addSchemaCallbackListener(this.schemaModelCallbackListener);
+        }
+    }
+
+    private disableSchemaCallbacks() {
+        if (this._schemaModel !== undefined) {
+            if (this._schemaCallbackListenerAdded && this._schemaModel.removeSchemaCallbackListener !== undefined) {
+                this._schemaModel.removeSchemaCallbackListener(this.schemaModelCallbackListener);
+                this._schemaCallbackListenerAdded = false;
+            }
+        }
+    }
+
+    private enableDataCallbacks() {
+        for (const registeredDataModel of this._registeredDataModels) {
+            const callbackListener = registeredDataModel.callbackListener;
+            if (callbackListener !== undefined) {
+                const dataModel = registeredDataModel.dataModel;
+                if (dataModel.addDataCallbackListener !== undefined) {
+                    dataModel.addDataCallbackListener(callbackListener);
+                }
+            }
+        }
+    }
+
+    private disableDataCallbacks() {
+        for (const registeredDataModel of this._registeredDataModels) {
+            const callbackListener = registeredDataModel.callbackListener;
+            if (callbackListener !== undefined) {
+                const dataModel = registeredDataModel.dataModel;
+                if (dataModel.removeDataCallbackListener !== undefined) {
+                    dataModel.removeDataCallbackListener(callbackListener);
+                }
+            }
+        }
     }
 
     getDataCallbackListener(index: number) {

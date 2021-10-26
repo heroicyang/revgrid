@@ -1663,7 +1663,7 @@ export class MainSubgrid extends Subgrid {
     // (undocumented)
     getLastSelection(): Selection_2;
     // (undocumented)
-    getLastSelectionType(n?: number): "" | "cell" | "column" | "row";
+    getLastSelectionType(n?: number): "" | "column" | "row" | "cell";
     // (undocumented)
     getMatrixSelectionAsTSV(selections: Array<Array<DataModel.DataValue>>): string;
     // (undocumented)
@@ -2391,7 +2391,7 @@ export class Revgrid implements SelectionDetail {
     // (undocumented)
     getHiDPI(): number;
     // (undocumented)
-    getLastSelectionType(): "" | "cell" | "column" | "row";
+    getLastSelectionType(): "" | "column" | "row" | "cell";
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@summary" is not defined in this configuration
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     getLogicalRowCount(): number;
@@ -2852,10 +2852,9 @@ export class RevRecordDataError extends RevRecordExternalError {
 }
 
 // @public (undocumented)
-export interface RevRecordDataStore {
+export interface RevRecordDataStore extends RevRecordStore {
     getRecord(index: RevRecordIndex): RevRecordData;
     getRecords(): readonly RevRecordData[];
-    readonly recordCount: number;
     // (undocumented)
     revRecordData: true;
 }
@@ -2886,9 +2885,21 @@ export interface RevRecordField {
 }
 
 // @public (undocumented)
-export class RevRecordFieldAdapter implements SchemaModel {
+export namespace RevRecordField {
     // (undocumented)
-    addField(field: RevRecordField, header: string): RevRecordFieldAdapter.SchemaColumn;
+    export type Comparer = (this: void, left: RevRecord, right: RevRecord) => number;
+    // (undocumented)
+    export interface SchemaColumn extends SchemaModel.Column {
+        // (undocumented)
+        header: string;
+    }
+}
+
+// @public (undocumented)
+export class RevRecordFieldAdapter implements SchemaModel, RevRecordStore.FieldsEventers {
+    constructor(_recordStore: RevRecordStore);
+    // (undocumented)
+    addField(field: RevRecordField, header: string): RevRecordField.SchemaColumn;
     // (undocumented)
     addFields(fields: RevRecordField[]): RevRecordFieldIndex;
     // (undocumented)
@@ -2902,7 +2913,7 @@ export class RevRecordFieldAdapter implements SchemaModel {
     // (undocumented)
     get fields(): readonly RevRecordField[];
     // (undocumented)
-    getActiveSchemaColumns(): RevRecordFieldAdapter.SchemaColumn[];
+    getActiveSchemaColumns(): RevRecordField.SchemaColumn[];
     // (undocumented)
     getColumnCount(): number;
     // (undocumented)
@@ -2926,18 +2937,9 @@ export class RevRecordFieldAdapter implements SchemaModel {
     // (undocumented)
     reset(): void;
     // (undocumented)
-    get schema(): readonly RevRecordFieldAdapter.SchemaColumn[];
+    get schema(): readonly RevRecordField.SchemaColumn[];
     // (undocumented)
     setFieldHeader(fieldOrIndex: RevRecordFieldIndex | RevRecordField, header: string): number;
-}
-
-// @public (undocumented)
-export namespace RevRecordFieldAdapter {
-    // (undocumented)
-    export interface SchemaColumn extends SchemaModel.Column {
-        // (undocumented)
-        header: string;
-    }
 }
 
 // @public
@@ -2963,7 +2965,7 @@ export class RevRecordHeaderAdapter implements DataModel {
     // (undocumented)
     getRowCount(): number;
     // (undocumented)
-    getValue(schemaColumn: RevRecordFieldAdapter.SchemaColumn): string;
+    getValue(schemaColumn: RevRecordField.SchemaColumn): string;
     // (undocumented)
     invalidateCell(schemaColumnIndex: number): void;
 }
@@ -2984,7 +2986,7 @@ export interface RevRecordInvalidatedValue {
 }
 
 // @public (undocumented)
-export class RevRecordMainAdapter implements MainDataModel {
+export class RevRecordMainAdapter implements MainDataModel, RevRecordStore.RecordsEventers {
     constructor(_fieldAdapter: RevRecordFieldAdapter, _recordStore: RevRecordStore);
     // (undocumented)
     addDataCallbackListener(value: MainDataModel.CallbackListener): void;
@@ -3026,7 +3028,7 @@ export class RevRecordMainAdapter implements MainDataModel {
     // (undocumented)
     getSortSpecifier(index: number): RevRecordMainAdapter.SortFieldSpecifier;
     // (undocumented)
-    getValue(schemaColumn: RevRecordFieldAdapter.SchemaColumn, rowIndex: number): DataModel.DataValue;
+    getValue(schemaColumn: RevRecordField.SchemaColumn, rowIndex: number): DataModel.DataValue;
     // (undocumented)
     invalidateAll(): void;
     // (undocumented)
@@ -3157,6 +3159,64 @@ export interface RevRecordStore {
     getRecord(index: RevRecordIndex): RevRecord;
     getRecords(): readonly RevRecord[];
     readonly recordCount: number;
+    // (undocumented)
+    setFieldEventers(fieldsEventers: RevRecordStore.FieldsEventers): void;
+    // (undocumented)
+    setRecordEventers(recordsEventers: RevRecordStore.RecordsEventers): void;
+}
+
+// @public (undocumented)
+export namespace RevRecordStore {
+    // (undocumented)
+    export interface FieldsEventers {
+        // (undocumented)
+        addField(field: RevRecordField, header: string): RevRecordField.SchemaColumn;
+        // (undocumented)
+        addFields(fields: RevRecordField[]): RevRecordFieldIndex;
+        // (undocumented)
+        beginChange(): void;
+        // (undocumented)
+        endChange(): void;
+    }
+    // (undocumented)
+    export interface RecordsEventers {
+        // (undocumented)
+        allRecordsDeleted(): void;
+        // (undocumented)
+        beginChange(): void;
+        // (undocumented)
+        endChange(): void;
+        // (undocumented)
+        invalidateAll(): void;
+        // (undocumented)
+        invalidateFields(fieldIndexes: RevRecordFieldIndex[]): void;
+        // (undocumented)
+        invalidateFiltering(): void;
+        // (undocumented)
+        invalidateRecord(recordIndex: RevRecordIndex, recent?: boolean): void;
+        // (undocumented)
+        invalidateRecordAndValues(recordIndex: RevRecordIndex, invalidatedValues: RevRecordInvalidatedValue[], recordUpdateRecent?: boolean): void;
+        // (undocumented)
+        invalidateRecordFields(recordIndex: RevRecordIndex, fieldIndex: RevRecordFieldIndex, fieldCount: number): void;
+        // (undocumented)
+        invalidateRecords(recordIndex: RevRecordIndex, count: number, recent?: boolean): void;
+        // (undocumented)
+        invalidateRecordValues(recordIndex: RevRecordIndex, invalidatedValues: RevRecordInvalidatedValue[]): void;
+        // (undocumented)
+        invalidateValue(fieldIndex: RevRecordFieldIndex, recordIndex: RevRecordIndex, valueRecentChangeTypeId?: RevRecordValueRecentChangeTypeId): void;
+        // (undocumented)
+        recordDeleted(recordIndex: RevRecordIndex): void;
+        // (undocumented)
+        recordInserted(recordIndex: RevRecordIndex, recent?: boolean): void;
+        // (undocumented)
+        recordsDeleted(recordIndex: number, count: number): void;
+        // (undocumented)
+        recordsInserted(firstInsertedRecordIndex: RevRecordIndex, count: number, recent?: boolean): void;
+        // (undocumented)
+        recordsLoaded(recent?: boolean): void;
+        // (undocumented)
+        recordsSpliced(recordIndex: RevRecordIndex, deleteCount: number, insertCount: number): void;
+    }
 }
 
 // @public
@@ -3326,7 +3386,7 @@ export class Subgrid {
     constructor(
     _grid: Revgrid,
     _columnsManager: ColumnsManager,
-    _modelCallbackManager: ModelCallbackRouter, role: Subgrid.Role, schemaModel: SchemaModel, dataModel: DataModel, metaModel: MetaModel | undefined, cellModel: CellModel | undefined);
+    role: Subgrid.Role, schemaModel: SchemaModel, dataModel: DataModel, metaModel: MetaModel | undefined, cellModel: CellModel | undefined);
     // (undocumented)
     readonly cellModel: CellModel | undefined;
     // @internal (undocumented)
@@ -3359,7 +3419,7 @@ export class Subgrid {
     readonly isSummary: boolean;
     // (undocumented)
     readonly metaModel: MetaModel | undefined;
-    // (undocumented)
+    // @internal (undocumented)
     readonly role: Subgrid.Role;
     // (undocumented)
     readonly schemaModel: SchemaModel;

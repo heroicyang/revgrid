@@ -1,4 +1,4 @@
-import { DataModel } from '../../grid/grid-public-api';
+import { DataModel, SchemaModel } from '../../grid/grid-public-api';
 import { RevRecord } from './rev-record';
 
 /** Provides access to a field
@@ -34,7 +34,11 @@ export interface RevRecordField {
 }
 
 /** @public */
-export namespace RecordField {
+export namespace RevRecordField {
+    export interface SchemaColumn extends SchemaModel.Column {
+        header: string;
+    }
+
     export type Comparer = (this: void, left: RevRecord, right: RevRecord) => number;
 }
 

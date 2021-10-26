@@ -44,7 +44,7 @@ export class MainSubgrid extends Subgrid {
         metaModel: MetaModel | undefined,
         cellModel: CellModel | undefined,
     ) {
-        super(grid, columnsManager, modelCallbackManager, role, schemaModel, dataModel, metaModel, cellModel);
+        super(grid, columnsManager, role, schemaModel, dataModel, metaModel, cellModel);
 
         this.selectionModel = new SelectionModel(grid);
 

@@ -1,20 +1,18 @@
 import {
     defaultGridProperties,
-    GridProperties, Revgrid, RevRecordCellAdapter,
-    RevRecordFieldAdapter,
-    RevRecordFieldIndex, RevRecordHeaderAdapter, RevRecordIndex, RevRecordMainAdapter, Subgrid
+    GridProperties, RevRecordFieldIndex, RevRecordIndex, RevRecordMainAdapter
 } from '..';
-import { RecordStore } from './data-store';
 import { GridSettings } from './grid-settings';
 import { RecordGrid } from './record-grid';
+import { RecordStore } from './record-store';
 import { TestCellPainter } from './test-cell-painter';
 
 export class Main {
     private readonly _gridHostElement: HTMLElement;
 
-    private readonly _fieldAdapter = new RevRecordFieldAdapter();
-    private readonly _headerRecordAdapter = new RevRecordHeaderAdapter();
-    private readonly _mainRecordAdapter: RevRecordMainAdapter;
+    // private readonly _fieldAdapter = new RevRecordFieldAdapter();
+    // private readonly _headerRecordAdapter = new RevRecordHeaderAdapter();
+    // private readonly _mainRecordAdapter: RevRecordMainAdapter;
 
     private readonly _recordStore: RecordStore;
     private readonly _mainCellPainter: TestCellPainter;
@@ -382,96 +380,16 @@ export class Main {
         this._recordStore = new RecordStore();
         this._mainCellPainter = new TestCellPainter(this._settings);
 
-        const mainRecordAdapter = new RevRecordMainAdapter(
-            this._fieldAdapter,
-            this._recordStore,
-        );
-        this._mainRecordAdapter = mainRecordAdapter;
-        mainRecordAdapter.allChangedRecentDuration = this._settings.allChangedRecentDuration;
-        mainRecordAdapter.recordInsertedRecentDuration = this._settings.recordInsertedRecentDuration;
-        mainRecordAdapter.recordUpdatedRecentDuration = this._settings.recordUpdatedRecentDuration;
-        mainRecordAdapter.valueChangedRecentDuration = this._settings.valueChangedRecentDuration;
-
-        const recordCellAdapter = new RevRecordCellAdapter(mainRecordAdapter, this._mainCellPainter);
-
-        const gridProperties: Partial<GridProperties> = {
-            renderFalsy: true,
-            autoSelectRows: false,
-            singleRowSelectionMode: false,
-            columnSelection: false,
-            rowSelection: false,
-            restoreColumnSelections: false,
-            multipleSelections: false,
-            sortOnDoubleClick: false,
-            ...GridSettings.createGridPropertiesFromSettings(this._settings, undefined),
-        };
-
-        const hypergridOptions: Revgrid.Options = {
-            adapterSet: {
-                schemaModel: this._fieldAdapter,
-                subgrids: [
-                    {
-                        role: Subgrid.RoleEnum.header,
-                        dataModel: this._headerRecordAdapter,
-                    },
-                    {
-                        role: Subgrid.RoleEnum.main,
-                        dataModel: mainRecordAdapter,
-                        cellModel: recordCellAdapter,
-                    }
-                ],
-            },
-            gridProperties,
-            loadBuiltinFinbarStylesheet: false,
-        };
-
-        this._grid = new RecordGrid(
-            gridHostElement,
-            hypergridOptions,
-            this._fieldAdapter,
-            this._headerRecordAdapter,
-            this._mainRecordAdapter
-        );
-
-        this._grid.canvas.canvas.addEventListener('mousemove', this._ctrlKeyMousemoveListener);
-
-        this._grid.recordFocusEventer = (newRecordIndex, oldRecordIndex) => this.handleRecordFocus(newRecordIndex, oldRecordIndex)
-        this._grid.recordFocusClickEventer = (fieldIndex, recordIndex) => this.handleRecordFocusClick(fieldIndex, recordIndex);
-        this._grid.recordFocusDblClickEventer = (fieldIndex, recordIndex) => this.handleRecordFocusDblClick(fieldIndex, recordIndex);
-        this._grid.resizedEventer = () => this.handleGridResized();
-        this._grid.columnWidthChangedEventer = () => this.handleColumnWidthChanged();
-        this._grid.renderedEventer = () => this.handleGridRendered();
-
-        this._fieldAdapter.beginChange();
-        try {
-            // Define the fields used by this grid
-            for (const field of RecordStore.fieldDefinitions) {
-                this._fieldAdapter.addField(field, field.name);
-            }
-        } finally {
-            this._fieldAdapter.endChange();
-        }
-
-        this._grid.setFieldsVisible([RecordStore.hiddenStrValGridField], false);
-        this._grid.setFixedColumnCount(defaultGridSettings.fixedColumnCount);
-
-        this._mainRecordAdapter.beginChange();
-        try {
-            // Notify the grid that there are pre-populated rows
-            this._mainRecordAdapter.recordsInserted(0, this._recordStore.recordCount);
-        }
-        finally {
-            this._mainRecordAdapter.endChange();
-        }
+        this._grid = this.createGrid(gridHostElement);
 
         this._randomStuffCheckboxElement.checked = false;
-        this._continuousFilteringCheckboxElement.checked = this._mainRecordAdapter.continuousFiltering;
+        this._continuousFilteringCheckboxElement.checked = this._grid.continuousFiltering;
         this._filterIntegerTextboxElement.value = this._integerFilterValue.toString();
         this._hideStringFieldCheckboxElement.checked = false;
         this._fixedColumnTextboxElement.value = defaultGridSettings.fixedColumnCount.toString();
         this.handleUiFixedColumnChange();
         this._enableLargeHighlightCheckboxElement.checked = false;
-        this._rowOrderReversedCheckboxElement.checked = this._mainRecordAdapter.rowOrderReversed;
+        this._rowOrderReversedCheckboxElement.checked = this._grid.rowOrderReversed;
         this._cellPaddingTextboxElement.value = this._settings.cellPadding.toString();
         const rowHeight = this._settings.defaultRowHeight;
         this._rowHeightTextboxElement.value = rowHeight === undefined ? '' : rowHeight.toString();
@@ -508,7 +426,7 @@ export class Main {
     }
 
     private handleUiInsertRecordsAction() {
-        this.insertRandomRecords();
+        this.insertFewRandomRecords();
     }
 
     private handleUiInsertManyRecordsAction() {
@@ -533,7 +451,6 @@ export class Main {
 
     private handleUiClearRecordsAction() {
         this._recordStore.clearRecords();
-        this._mainRecordAdapter.allRecordsDeleted();
     }
 
     private handleUiRandomStuffChange(): void {
@@ -555,12 +472,12 @@ export class Main {
     }
 
     private handleUiContinuousFilteringCheckboxChange() {
-        this._mainRecordAdapter.continuousFiltering = this._continuousFilteringCheckboxElement.checked;
+        this._grid.continuousFiltering = this._continuousFilteringCheckboxElement.checked;
 
-        if (this._mainRecordAdapter.continuousFiltering) {
-            this._mainRecordAdapter.filterCallback = this.createFilterCallbackClosure();
+        if (this._grid.continuousFiltering) {
+            this._grid.filterCallback = this.createFilterCallbackClosure();
         } else {
-            this._mainRecordAdapter.filterCallback = undefined;
+            this._grid.filterCallback = undefined;
         }
     }
 
@@ -568,8 +485,8 @@ export class Main {
         this._integerFilterValue--;
         this._filterIntegerTextboxElement.value = this._integerFilterValue.toString();
 
-        if (this._mainRecordAdapter.continuousFiltering) {
-            this._mainRecordAdapter.filterCallback = this.createFilterCallbackClosure();
+        if (this._grid.continuousFiltering) {
+            this._grid.filterCallback = this.createFilterCallbackClosure();
         }
     }
 
@@ -577,8 +494,8 @@ export class Main {
         const value = this._filterIntegerTextboxElement.value;
         this._integerFilterValue = Number.parseInt(value, 10);
 
-        if (this._mainRecordAdapter.continuousFiltering) {
-            this._mainRecordAdapter.filterCallback = this.createFilterCallbackClosure();
+        if (this._grid.continuousFiltering) {
+            this._grid.filterCallback = this.createFilterCallbackClosure();
         }
     }
 
@@ -586,8 +503,8 @@ export class Main {
         this._integerFilterValue++;
         this._filterIntegerTextboxElement.value = this._integerFilterValue.toString();
 
-        if (this._mainRecordAdapter.continuousFiltering) {
-            this._mainRecordAdapter.filterCallback = this.createFilterCallbackClosure();
+        if (this._grid.continuousFiltering) {
+            this._grid.filterCallback = this.createFilterCallbackClosure();
         }
     }
 
@@ -597,11 +514,11 @@ export class Main {
     }
 
     private handleUiEnableLargeHighlightChange() {
-        this._mainRecordAdapter.invalidateAll();
+        this._recordStore.invalidateAll();
     }
 
     private handleUiRowOrderReversedChange() {
-        this._mainRecordAdapter.rowOrderReversed = this._rowOrderReversedCheckboxElement.checked;
+        this._grid.rowOrderReversed = this._rowOrderReversedCheckboxElement.checked;
     }
 
     private handleUiDecrementCellPaddingAction() {
@@ -671,10 +588,12 @@ export class Main {
     }
 
     private handleUiApplySettings() {
-        this._mainRecordAdapter.allChangedRecentDuration = this._settings.allChangedRecentDuration;
-        this._mainRecordAdapter.recordInsertedRecentDuration = this._settings.recordInsertedRecentDuration;
-        this._mainRecordAdapter.recordUpdatedRecentDuration = this._settings.recordUpdatedRecentDuration;
-        this._mainRecordAdapter.valueChangedRecentDuration = this._settings.valueChangedRecentDuration;
+        this._grid.setRecentDurations(
+            this._settings.allChangedRecentDuration,
+            this._settings.recordInsertedRecentDuration,
+            this._settings.recordUpdatedRecentDuration,
+            this._settings.valueChangedRecentDuration
+        );
 
         const properties = GridSettings.createGridPropertiesFromSettings(this._settings, this._grid.properties);
         const changedPropertyKeys = Object.keys(properties);
@@ -707,7 +626,6 @@ export class Main {
         setTimeout(() => {
             // Clear existing records
             this._recordStore.clearRecords();
-            this._mainRecordAdapter.allRecordsDeleted();
 
             // Create records
             const Count = 30000;
@@ -716,12 +634,12 @@ export class Main {
             }
 
             // Insert Records
-            this._mainRecordAdapter.beginChange();
+            this._recordStore.beginChange();
             try {
                 const idx = 0;
                 this.profileInsertOperation(idx, Count);
             } finally {
-                this._mainRecordAdapter.endChange();
+                this._recordStore.endChange();
             }
         }, 10);
     }
@@ -732,7 +650,6 @@ export class Main {
         setTimeout(() => {
             // Clear existing records
             this._recordStore.clearRecords();
-            this._mainRecordAdapter.allRecordsDeleted();
 
             // Create records
             const Count = 60000;
@@ -741,12 +658,12 @@ export class Main {
             }
 
             // Insert Records
-            this._mainRecordAdapter.beginChange();
+            this._recordStore.beginChange();
             try {
                 const idx = 0;
                 this.profileInsertOperation(idx, Count);
             } finally {
-                this._mainRecordAdapter.endChange();
+                this._recordStore.endChange();
             }
         }, 10);
     }
@@ -757,7 +674,7 @@ export class Main {
         setTimeout(() => {
             const idx = 0;
             const Count = 1;
-            this._recordStore.insertRecordData(idx, this.getRandomRecordData())
+            this._recordStore.insertRecord(idx, this.getRandomRecordData(), false, false)
             this.profileInsertOperation(idx, Count);
         }, 10);
     }
@@ -768,7 +685,7 @@ export class Main {
         setTimeout(() => {
             const idx = Math.floor(this._recordStore.recordCount / 2);
             const Count = 1;
-            this._recordStore.insertRecordData(idx, this.getRandomRecordData())
+            this._recordStore.insertRecord(idx, this.getRandomRecordData(), false, false)
             this.profileInsertOperation(idx, Count);
         }, 10);
     }
@@ -786,34 +703,34 @@ export class Main {
 
     private profileInsertOperation(idx: number, count: number) {
         this.profileAction(() => {
-            this._mainRecordAdapter.recordsInserted(idx, count, false);
+            this._recordStore.eventifyRecordsInserted(idx, count, false);
         });
     }
 
     private handleUiPerformanceDeleteOneAtStartAction() {
         const idx = 0;
-        this._recordStore.deleteRecord(idx);
+        this._recordStore.deleteRecord(idx, false);
 
         this.profileAction(() => {
-            this._mainRecordAdapter.recordDeleted(idx);
+            this._recordStore.eventifyRecordDeleted(idx);
         });
     }
 
     private handleUiPerformanceDeleteOneAtMiddleAction() {
         const idx = Math.floor(this._recordStore.recordCount / 2);
-        this._recordStore.deleteRecord(idx);
+        this._recordStore.deleteRecord(idx, false);
 
         this.profileAction(() => {
-            this._mainRecordAdapter.recordDeleted(idx);
+            this._recordStore.eventifyRecordDeleted(idx);
         });
     }
 
     private handleUiPerformanceDeleteOneAtEndAction() {
         const idx = this._recordStore.recordCount - 1;
-        this._recordStore.deleteRecord(idx);
+        this._recordStore.deleteRecord(idx, false);
 
         this.profileAction(() => {
-            this._mainRecordAdapter.recordDeleted(idx);
+            this._recordStore.eventifyRecordDeleted(idx);
         });
     }
 
@@ -824,7 +741,7 @@ export class Main {
             element.data = data;
         }
         this.profileAction(() => {
-            this._mainRecordAdapter.invalidateAll();
+            this._recordStore.invalidateAll();
         });
     }
 
@@ -842,16 +759,59 @@ export class Main {
         }
 
         this.profileAction(() => {
-            this._mainRecordAdapter.beginChange();
+            this._recordStore.beginChange();
             try {
                 for (const index of indices) {
-                    this._mainRecordAdapter.invalidateRecord(index);
+                    this._recordStore.invalidateRecord(index);
                 }
             } finally {
-                this._mainRecordAdapter.endChange();
+                this._recordStore.endChange();
             }
 
         });
+    }
+
+    private createGrid(hostElement: HTMLElement) {
+        const gridProperties: Partial<GridProperties> = {
+            renderFalsy: true,
+            autoSelectRows: false,
+            singleRowSelectionMode: false,
+            columnSelection: false,
+            rowSelection: false,
+            restoreColumnSelections: false,
+            multipleSelections: false,
+            sortOnDoubleClick: false,
+            ...GridSettings.createGridPropertiesFromSettings(this._settings, undefined),
+        };
+
+        const grid = new RecordGrid(
+            hostElement,
+            this._recordStore,
+            this._mainCellPainter,
+            gridProperties,
+        );
+
+        grid.setRecentDurations(
+            this._settings.allChangedRecentDuration,
+            this._settings.recordInsertedRecentDuration,
+            this._settings.recordUpdatedRecentDuration,
+            this._settings.valueChangedRecentDuration
+        );
+
+        grid.canvas.canvas.addEventListener('mousemove', this._ctrlKeyMousemoveListener);
+
+        grid.recordFocusEventer = (newRecordIndex, oldRecordIndex) => this.handleRecordFocus(newRecordIndex, oldRecordIndex)
+        grid.recordFocusClickEventer = (fieldIndex, recordIndex) => this.handleRecordFocusClick(fieldIndex, recordIndex);
+        grid.recordFocusDblClickEventer = (fieldIndex, recordIndex) => this.handleRecordFocusDblClick(fieldIndex, recordIndex);
+
+        grid.resizedEventer = () => this.handleGridResized();
+        grid.columnWidthChangedEventer = () => this.handleColumnWidthChanged();
+        grid.renderedEventer = () => this.handleGridRendered();
+
+        grid.setFieldsVisible([RecordStore.hiddenStrValGridField], false);
+        grid.setFixedColumnCount(defaultGridSettings.fixedColumnCount);
+
+        return grid;
     }
 
     private profileAction(action: () => void): void {
@@ -883,8 +843,8 @@ export class Main {
 
     private updateScrollbar() {
         const settings = this._settings;
-        // this._gridHostElement.style.setProperty(CssVar.scrollbarThumbColor, colorSettings.getFore(settings.scrollbar));
-        // this._gridHostElement.style.setProperty(CssVar.scrollbarThumbShadowColor, colors.scrollbarThumbShadowColor);
+        // this._grid1HostElement.style.setProperty(CssVar.scrollbarThumbColor, colorSettings.getFore(settings.scrollbar));
+        // this._grid1HostElement.style.setProperty(CssVar.scrollbarThumbShadowColor, colors.scrollbarThumbShadowColor);
         this._gridHostElement.style.setProperty(CssVar.scrollbarHorizontalHeight, this.numberToPixels(settings.scrollbarHorizontalHeight));
         this._gridHostElement.style.setProperty(CssVar.scrollbarHorizontalThumbHeight, this.numberToPixels(settings.scrollbarHorizontalThumbHeight));
         this._gridHostElement.style.setProperty(CssVar.scrollbarVerticalWidth, this.numberToPixels(settings.scrollbarVerticalWidth));
@@ -946,37 +906,35 @@ export class Main {
         if (this._debugEnabled) {
             console.debug(`InsertRecord: ${idx}, ${this._recordStore.recordCount}`);
         }
-        this.insertRandomDataRecIntoRecordStore(idx);
-        this._mainRecordAdapter.recordInserted(idx, true);
+        const dataRec = this.getRandomRecordData();
+        this._recordStore.insertRecord(idx, dataRec, true, true);
         this._insertRecordIndexSpanElement.textContent = idx.toString();
     }
 
-    private insertRandomRecords() {
-        const count = Math.floor(Math.random() * 5) + 1;
+    private insertRandomRecords(count: number) {
         const idx = Math.floor(Math.random() * (this._recordStore.recordCount + 1)); // insert index
         if (this._debugEnabled) {
             console.debug(`InsertRecords: ${idx}, ${count}, ${this._recordStore.recordCount}`);
         }
-        for (let i = idx; i < idx + count; i++) {
-            this.insertRandomDataRecIntoRecordStore(i);
+        const recordDatas = new Array<RecordStore.Record.Data>(count);
+        for (let i = 0; i < count; i++) {
+            recordDatas[i] = this.getRandomRecordData();
         }
-        this._mainRecordAdapter.recordsInserted(idx, count, true);
+        this._recordStore.insertRecords(idx, recordDatas, true);
+
+        return idx;
+    }
+
+    private insertFewRandomRecords() {
+        const count = Math.floor(Math.random() * 5) + 1;
+        const idx = this.insertRandomRecords(count)
         this._insertRecordIndexSpanElement.textContent = `${idx}, ${count}`;
     }
 
     private insertManyRandomRecords() {
         const count = 200;
-        const idx = Math.floor(Math.random() * (this._recordStore.recordCount + 1)); // insert index
-        for (let i = idx; i < idx + count; i++) {
-            this.insertRandomDataRecIntoRecordStore(i);
-        }
-        this._mainRecordAdapter.recordsInserted(idx, count, true);
+        const idx = this.insertRandomRecords(count)
         this._insertManyRecordsIndexSpanElement.textContent = `${idx}, ${count}`;
-    }
-
-    private insertRandomDataRecIntoRecordStore(idx: number) {
-        const dataRec = this.getRandomRecordData();
-        this._recordStore.insertRecordData(idx, dataRec);
     }
 
     private getRandomRecordData(): RecordStore.Record.Data {
@@ -994,8 +952,7 @@ export class Main {
             if (this._debugEnabled) {
                 console.debug(`DeleteRecord: ${idx}, ${this._recordStore.recordCount}`);
             }
-            this._recordStore.deleteRecord(idx);
-            this._mainRecordAdapter.recordDeleted(idx);
+            this._recordStore.deleteRecord(idx, true);
             this._deleteRecordIndexSpanElement.textContent = idx.toString();
         }
     }
@@ -1010,20 +967,17 @@ export class Main {
             if (this._debugEnabled) {
                 console.debug(`DeleteRecords: ${idx}, ${count}, ${this._recordStore.recordCount}`);
             }
-            for (let I = idx + count - 1; I >= idx; I--) {
-                this._recordStore.deleteRecord(I);
-            }
-            this._mainRecordAdapter.recordsDeleted(idx, count);
+            this._recordStore.deleteRecords(idx, count);
             this._deleteRecordIndexSpanElement.textContent = `${idx}, ${count}`;
         }
     }
 
     private modifyRandomValue() {
-        const fieldCount = this._fieldAdapter.fieldCount;
+        const fieldCount = this._grid.fieldCount;
         if (fieldCount > 0 && this._recordStore.recordCount > 0) {
             let fieldIdx = Math.floor(Math.random() * fieldCount);
 
-            if (this._fieldAdapter.getField(fieldIdx) === RecordStore.recordIndexGridField) {
+            if (this._grid.getField(fieldIdx) === RecordStore.recordIndexGridField) {
                 fieldIdx += 2;
             }
 
@@ -1032,12 +986,12 @@ export class Main {
             const recIdx = Math.floor(Math.random() * this._recordStore.recordCount);
             this.modifyValue(fieldIdx, recIdx);
 
-            this._modifyValuePosSpanElement.textContent = `${this._fieldAdapter.getField(fieldIdx).name}, ${recIdx}`;
+            this._modifyValuePosSpanElement.textContent = `${this._grid.getField(fieldIdx).name}, ${recIdx}`;
         }
     }
 
     private modifyRandomValues() {
-        this._mainRecordAdapter.beginChange();
+        this._recordStore.beginChange();
         const count = Math.floor(Math.random() * 8);
         if (this._debugEnabled) {
             console.debug(`ModifyRandomValues: ${count}, ${this._recordStore.recordCount}`);
@@ -1045,23 +999,25 @@ export class Main {
         for (let i = 0; i < count; i++) {
             this.modifyRandomValue();
         }
-        this._mainRecordAdapter.endChange();
+        this._recordStore.endChange();
     }
 
     private modifyValue(fieldIndex: number, recIdx: number) {
         if (this._debugEnabled) {
             console.debug(`ModifyValue: ${fieldIndex}, ${recIdx}, ${this._recordStore.recordCount}`);
         }
-        const field = this._fieldAdapter.getField(fieldIndex);
+        const field = this._grid.getField(fieldIndex);
         const isIntValueField = field === RecordStore.intValGridField;
 
         const valueRecentChangeTypeId = this._recordStore.modifyValue(field, recIdx);
 
-        if (isIntValueField && valueRecentChangeTypeId !== undefined && recIdx === this._grid.focusedRecordIndex) {
-            this.updateCaptionValue(recIdx);
-        }
+        if (valueRecentChangeTypeId !== undefined) {
+            if (isIntValueField && recIdx === this._grid.focusedRecordIndex) {
+                this.updateCaptionValue(recIdx);
+            }
 
-        this._mainRecordAdapter.invalidateValue(fieldIndex, recIdx, valueRecentChangeTypeId);
+            this._recordStore.invalidateValue(fieldIndex, recIdx, valueRecentChangeTypeId);
+        }
     }
 
     private updateCaptionValue(recIdx: number) {
@@ -1087,7 +1043,7 @@ export class Main {
         } else if (ActionKey < 19) {
             this.insertRandomRecord();
         } else if (ActionKey < 20) {
-            this.insertRandomRecords();
+            this.insertFewRandomRecords();
         }
     }
 

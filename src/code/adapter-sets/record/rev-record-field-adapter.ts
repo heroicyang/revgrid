@@ -1,11 +1,12 @@
 import { SchemaModel } from '../../grid/grid-public-api';
 import { RevRecordSchemaError, RevRecordUnexpectedUndefinedError } from './rev-record-error';
 import { RevRecordField } from './rev-record-field';
+import { RevRecordStore } from './rev-record-store';
 import { RevRecordFieldIndex } from './rev-record-types';
 
 /** @public */
-export class RevRecordFieldAdapter implements SchemaModel {
-    private readonly _schema: RevRecordFieldAdapter.SchemaColumn[] = [];
+export class RevRecordFieldAdapter implements SchemaModel, RevRecordStore.FieldsEventers {
+    private readonly _schema: RevRecordField.SchemaColumn[] = [];
     private readonly _fields: RevRecordField[] = [];
     private readonly _fieldNameLookup = new Map<string, RevRecordField>();
     private readonly _fieldIndexLookup = new Map<RevRecordField, RevRecordFieldIndex>();
@@ -13,16 +14,24 @@ export class RevRecordFieldAdapter implements SchemaModel {
     private readonly _fieldValueDependsOnRowIndexFieldIndexes: RevRecordFieldIndex[] = [];
 
     private _callbackListener: SchemaModel.CallbackListener;
+    private _recordStoreEventersSet = false;
 
-    get schema(): readonly RevRecordFieldAdapter.SchemaColumn[] { return this._schema }
+    get schema(): readonly RevRecordField.SchemaColumn[] { return this._schema }
     get fieldCount(): number { return this._fields.length; }
     get fields(): readonly RevRecordField[] { return this._fields; }
 
-    addSchemaCallbackListener(value: SchemaModel.CallbackListener): void {
-        this._callbackListener = value;
+    constructor(private readonly _recordStore: RevRecordStore) {
     }
 
-    addField(field: RevRecordField, header: string): RevRecordFieldAdapter.SchemaColumn {
+    addSchemaCallbackListener(value: SchemaModel.CallbackListener): void {
+        this._callbackListener = value;
+        if (!this._recordStoreEventersSet) {
+            this._recordStore.setFieldEventers(this);
+            this._recordStoreEventersSet = true;
+        }
+    }
+
+    addField(field: RevRecordField, header: string): RevRecordField.SchemaColumn {
         const fieldIndex = this._fields.length;
 
         this._fieldIndexLookup.set(field, fieldIndex);
@@ -42,7 +51,7 @@ export class RevRecordFieldAdapter implements SchemaModel {
         }
 
         // Update Hypergrid Schema
-        const schemaColumn: RevRecordFieldAdapter.SchemaColumn = {
+        const schemaColumn: RevRecordField.SchemaColumn = {
             name: field.name,
             index: fieldIndex,
             header,
@@ -88,7 +97,7 @@ export class RevRecordFieldAdapter implements SchemaModel {
     }
 
     getActiveSchemaColumns() {
-        return this._callbackListener.getActiveSchemaColumns() as RevRecordFieldAdapter.SchemaColumn[];
+        return this._callbackListener.getActiveSchemaColumns() as RevRecordField.SchemaColumn[];
     }
 
     getColumnCount(): number {
@@ -171,12 +180,5 @@ export class RevRecordFieldAdapter implements SchemaModel {
         const columnSchema = this._schema[fieldIndex];
         columnSchema.header = header;
         return fieldIndex;
-    }
-}
-
-/** @public */
-export namespace RevRecordFieldAdapter {
-    export interface SchemaColumn extends SchemaModel.Column {
-        header: string;
     }
 }

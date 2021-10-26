@@ -4,17 +4,16 @@ import {
     Column,
     EventDetail,
     GridProperties,
-    Halign, Revgrid, RevRecordField,
+    Halign, Revgrid, RevRecordCellAdapter, RevRecordCellPainter, RevRecordField,
     RevRecordFieldAdapter,
-    RevRecordFieldIndex, RevRecordHeaderAdapter, RevRecordIndex, RevRecordMainAdapter, SelectionDetail
+    RevRecordFieldIndex, RevRecordHeaderAdapter, RevRecordIndex, RevRecordMainAdapter, RevRecordStore, SelectionDetail, Subgrid
 } from "..";
 
 export class RecordGrid extends Revgrid {
+    fieldSortedEventer: RecordGrid.FieldSortedEventer | undefined;
+    columnWidthChangedEventer: RecordGrid.ColumnWidthChangedEventer | undefined;
+
     private _lastNotifiedFocusedRecordIndex: number | undefined;
-
-    private _maxSortingFieldCount = 3;
-
-    private _beginThrottlingCount = 0;
 
     private _recordFocusEventer: RecordGrid.RecordFocusEventer | undefined;
     private _recordFocusClickEventer: RecordGrid.RecordFocusClickEventer | undefined;
@@ -23,50 +22,83 @@ export class RecordGrid extends Revgrid {
     private _columnsViewWidthsChangedEventer: RecordGrid.ColumnsViewWidthsChangedEventer | undefined;
     private _renderedEventer: RecordGrid.RenderedEventer | undefined;
 
-    private readonly _selectionChangedListener = (event: CustomEvent<SelectionDetail>) => this.handleHypegridSelectionChanged(event);
-    private readonly _clickListener = (event: CustomEvent<CellEvent>) => this.handleGridClickEvent(event);
-    private readonly _dblClickListener = (event: CustomEvent<CellEvent>) => this.handleGridDblClickEvent(event);
-    private readonly _resizedListener = (event: CustomEvent<EventDetail.Resize>) => this.handleHypegridResizedEvent(event);
-    private readonly _columnsViewWidthsChangedListener =
-        (event: CustomEvent<EventDetail.ColumnsViewWidthsChanged>) => this.handleHypegridColumnsViewWidthsChangedEvent(event);
-    private readonly _renderedListener = () => this.handleHypegridRenderedEvent();
-    // private readonly _nextRenderedListener = () => this.handleHypegridNextRenderedEvent();
-    private readonly _columnSortListener = (event: CustomEvent<EventDetail.ColumnSort>) => this.handleHypegridColumnSortEvent(event.detail.column);
+    private readonly _fieldAdapter: RevRecordFieldAdapter;
+    private readonly _headerRecordAdapter: RevRecordHeaderAdapter;
+    private readonly _mainRecordAdapter: RevRecordMainAdapter;
 
-    fieldSortedEventer: RecordGrid.FieldSortedEventer | undefined;
-    columnWidthChangedEventer: RecordGrid.ColumnWidthChangedEventer | undefined;
+    private readonly _selectionChangedListener: (event: CustomEvent<SelectionDetail>) => void;
+    private readonly _clickListener: (event: CustomEvent<CellEvent>) => void;
+    private readonly _dblClickListener: (event: CustomEvent<CellEvent>) => void;
+    private readonly _resizedListener: (event: CustomEvent<EventDetail.Resize>) => void;
+    private readonly _columnsViewWidthsChangedListener: (event: CustomEvent<EventDetail.ColumnsViewWidthsChanged>) => void;
+    private readonly _renderedListener: () => void;
+    private readonly _columnSortListener: (event: CustomEvent<EventDetail.ColumnSort>) => void;
 
     constructor(
         gridElement: HTMLElement,
-        options: Revgrid.Options,
-        private readonly _fieldAdapter: RevRecordFieldAdapter,
-        private readonly _headerRecordAdapter: RevRecordHeaderAdapter,
-        private readonly _mainRecordAdapter: RevRecordMainAdapter,
+        recordStore: RevRecordStore,
+        mainCellPainter: RevRecordCellPainter,
+        gridProperties: Partial<GridProperties>,
     ) {
+        const fieldAdapter = new RevRecordFieldAdapter(recordStore);
+        const mainRecordAdapter = new RevRecordMainAdapter(fieldAdapter, recordStore);
+        const headerRecordAdapter = new RevRecordHeaderAdapter();
+
+        const recordCellAdapter = new RevRecordCellAdapter(mainRecordAdapter, mainCellPainter);
+
+        const options: Revgrid.Options = {
+            adapterSet: {
+                schemaModel: fieldAdapter,
+                subgrids: [
+                    {
+                        role: Subgrid.RoleEnum.header,
+                        dataModel: headerRecordAdapter,
+                    },
+                    {
+                        role: Subgrid.RoleEnum.main,
+                        dataModel: mainRecordAdapter,
+                        cellModel: recordCellAdapter,
+                    }
+                ],
+            },
+            gridProperties,
+            loadBuiltinFinbarStylesheet: false,
+        };
+
         super(gridElement, options);
+
+        this._fieldAdapter = fieldAdapter;
+        this._headerRecordAdapter = headerRecordAdapter;
+        this._mainRecordAdapter = mainRecordAdapter;
+
+        this._selectionChangedListener = (event: CustomEvent<SelectionDetail>) => this.handleHypegridSelectionChanged(event);
+        this._clickListener = (event: CustomEvent<CellEvent>) => this.handleGridClickEvent(event);
+        this._dblClickListener = (event: CustomEvent<CellEvent>) => this.handleGridDblClickEvent(event);
+        this._resizedListener = (event: CustomEvent<EventDetail.Resize>) => this.handleHypegridResizedEvent(event);
+        this._columnsViewWidthsChangedListener = (event: CustomEvent<EventDetail.ColumnsViewWidthsChanged>) => this.handleHypegridColumnsViewWidthsChangedEvent(event);
+        this._renderedListener = () => this.handleHypegridRenderedEvent();
+        this._columnSortListener = (event: CustomEvent<EventDetail.ColumnSort>) => this.handleHypegridColumnSortEvent(event.detail.column);
 
         this.allowEvents(true);
 
         this.addEventListener('rev-column-sort', this._columnSortListener);
     }
 
+    get fieldCount(): number { return this._fieldAdapter.fieldCount; }
+
     get sortable(): boolean { return this.properties.sortable; }
     set sortable(value: boolean) { this.properties.sortable = value; }
 
     get columnCount(): number { return this.getActiveColumnCount(); }
 
-    // get continuousFiltering(): boolean { return this._mainRecordAdapter.continuousFiltering; }
-    // set continuousFiltering(value: boolean) {
-    //     const oldContinuousFiltering = this._mainRecordAdapter.continuousFiltering;
-    //     if (value !== oldContinuousFiltering) {
-    //         this._mainRecordAdapter.continuousFiltering = value;
+    get continuousFiltering(): boolean { return this._mainRecordAdapter.continuousFiltering; }
+    set continuousFiltering(value: boolean) { this._mainRecordAdapter.continuousFiltering = value}
 
-    //         if (value) {
-    //             // Continuous filtering was just turned on, apply if necessary
-    //             this.invalidateAll();
-    //         }
-    //     }
-    // }
+    get filterCallback(): RevRecordMainAdapter.RecordFilterCallback | undefined { return this._mainRecordAdapter.filterCallback; }
+    set filterCallback(value: RevRecordMainAdapter.RecordFilterCallback | undefined) { this._mainRecordAdapter.filterCallback = value}
+
+    get rowOrderReversed(): boolean { return this._mainRecordAdapter.rowOrderReversed; }
+    set rowOrderReversed(value: boolean) { this._mainRecordAdapter.rowOrderReversed = value}
 
     // get fieldCount(): number { return this._fieldAdapter.fieldCount; }
 
@@ -188,6 +220,13 @@ export class RecordGrid extends Revgrid {
         // todo
     }
 
+    setRecentDurations(allChanged: number, recordInserted: number, recordUpdated: number, valueChanged: number): void {
+        this._mainRecordAdapter.allChangedRecentDuration = allChanged;
+        this._mainRecordAdapter.recordInsertedRecentDuration = recordInserted;
+        this._mainRecordAdapter.recordUpdatedRecentDuration = recordUpdated;
+        this._mainRecordAdapter.valueChangedRecentDuration = valueChanged;
+    }
+
     autoSizeColumnWidth(columnIndex: number): void {
         this.autosizeColumn(columnIndex);
     }
@@ -201,6 +240,10 @@ export class RecordGrid extends Revgrid {
         }
 
         this.autosizeColumn(columnIndex);
+    }
+
+    getField(fieldIdx: number): RevRecordField {
+        return this._fieldAdapter.getField(fieldIdx);
     }
 
     getFieldIndex(field: RevRecordField): RevRecordFieldIndex {
@@ -225,7 +268,7 @@ export class RecordGrid extends Revgrid {
 
         return {
             width: !columnProperties.columnAutosized ? columnProperties.width : undefined,
-            header: (column.schemaColumn as RevRecordFieldAdapter.SchemaColumn).header,
+            header: (column.schemaColumn as RevRecordField.SchemaColumn).header,
             alignment: columnProperties.halign
         };
     }
@@ -240,7 +283,7 @@ export class RecordGrid extends Revgrid {
     getFieldVisible(field: RevRecordFieldIndex | RevRecordField): boolean {
         const fieldIndex = typeof field === 'number' ? field : this.getFieldIndex(field);
         const activeColumns = this.getActiveColumns();
-        return activeColumns.findIndex(column => (column.schemaColumn as RevRecordFieldAdapter.SchemaColumn).index === fieldIndex) !== -1;
+        return activeColumns.findIndex(column => (column.schemaColumn as RevRecordField.SchemaColumn).index === fieldIndex) !== -1;
     }
 
     getHeaderPlusFixedLineHeight(): number {
@@ -261,7 +304,7 @@ export class RecordGrid extends Revgrid {
     // }
 
     getVisibleFields(): RevRecordFieldIndex[] {
-        return this.getActiveColumns().map(column => (column.schemaColumn as RevRecordFieldAdapter.SchemaColumn).index);
+        return this.getActiveColumns().map(column => (column.schemaColumn as RevRecordField.SchemaColumn).index);
     }
 
     isHeaderRow(rowIndex: number): boolean {

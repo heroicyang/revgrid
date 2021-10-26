@@ -1,19 +1,48 @@
 import {
     DataModel,
-    RevRecord, RevRecordDateFunctionizeField,
+    RevRecordData,
+    RevRecordDateFunctionizeField,
     RevRecordField,
+    RevRecordFieldIndex,
     RevRecordIndex,
     RevRecordNumericFunctionizeField,
-    RevRecordSimpleFunctionizeField, RevRecordStore, RevRecordStringFunctionizeField,
+    RevRecordSimpleFunctionizeField,
+    RevRecordStore,
+    RevRecordStringFunctionizeField,
     RevRecordValueRecentChangeTypeId
 } from "..";
 
 export class RecordStore implements RevRecordStore {
     private _records: RecordStore.Record[] = [];
+    // private _fieldsEventers!: RevRecordStore.FieldsEventers;
+    private _recordsEventers!: RevRecordStore.RecordsEventers;
 
     constructor() {
         for (let I = 0; I < RecordStore.initialValues.length; I++) {
             this._records.push(RecordStore.Record.createCopy(RecordStore.initialValues[I]));
+        }
+    }
+
+    setFieldEventers(fieldsEventers: RevRecordStore.FieldsEventers): void {
+        // this._fieldsEventers = fieldsEventers;
+
+        fieldsEventers.beginChange();
+        try {
+            // Define the fields used by this grid
+            for (const field of RecordStore.fieldDefinitions) {
+                fieldsEventers.addField(field, field.name);
+            }
+        } finally {
+            fieldsEventers.endChange();
+        }
+    }
+
+    setRecordEventers(recordsEventers: RevRecordStore.RecordsEventers): void {
+        this._recordsEventers = recordsEventers;
+
+        const recordCount = this._records.length;
+        if (recordCount > 0) {
+            recordsEventers.recordsInserted(0, recordCount);
         }
     }
 
@@ -40,20 +69,52 @@ export class RecordStore implements RevRecordStore {
 
     clearRecords(): void {
         this._records.length = 0;
+        this.eventifyAllRecordsDeleted();
     }
 
-    deleteRecord(index: number): void {
+    deleteRecord(index: number, eventify: boolean): void {
         this._records.splice(index, 1);
         this.reindex(index);
+
+        if (eventify) {
+            this.eventifyRecordDeleted(index);
+        }
     }
 
-    insertRecordData(index: number, data: RecordStore.Record.Data): void {
+    deleteRecords(index: number, count: number): void {
+        this._records.splice(index, count);
+        this.reindex(index);
+
+        this._recordsEventers.recordsDeleted(index, count);
+    }
+
+    insertRecord(index: number, data: RecordStore.Record.Data, recent: boolean, eventify: boolean): void {
         const record: RecordStore.Record = {
             index,
             data,
         }
         this._records.splice(index, 0, record);
         this.reindex(index + 1);
+
+        if (eventify) {
+            this.eventifyRecordInserted(index, recent);
+        }
+    }
+
+    insertRecords(index: number, recordDatas: RecordStore.Record.Data[], recent: boolean): void {
+        const count = recordDatas.length;
+        const records = new Array<RecordStore.Record>(count);
+        for (let i = 0; i < count; i++) {
+            records[i] = {
+                index: index + i,
+                data: recordDatas[i],
+            };
+        }
+
+        this._records.splice(index, 0, ...records);
+        this.reindex(index + count);
+
+        this._recordsEventers.recordsInserted(index, count, recent);
     }
 
     modifyValue(field: RevRecordField, recIdx: number): RevRecordValueRecentChangeTypeId | undefined {
@@ -105,6 +166,34 @@ export class RecordStore implements RevRecordStore {
         }
     }
 
+    beginChange(): void {
+        this._recordsEventers.beginChange();
+    }
+
+    endChange(): void {
+        this._recordsEventers.endChange();
+    }
+
+    invalidateAll(): void {
+        this._recordsEventers.invalidateAll();
+    }
+
+    invalidateRecord(index: number): void {
+        this._recordsEventers.invalidateRecord(index);
+    }
+
+    invalidateValue(fieldIndex: RevRecordFieldIndex, recordIndex: RevRecordIndex, valueRecentChangeTypeId: RevRecordValueRecentChangeTypeId): void {
+        this._recordsEventers.invalidateValue(fieldIndex, recordIndex, valueRecentChangeTypeId);
+    }
+
+    eventifyRecordsInserted(idx: number, count: number, recent: boolean): void {
+        this._recordsEventers.recordsInserted(idx, count, recent);
+    }
+
+    eventifyRecordDeleted(idx: number): void {
+        this._recordsEventers.recordDeleted(idx);
+    }
+
     private calculateNumberValueRecentChangeId(oldValue: number, newValue: number) {
         if (newValue === oldValue) {
             return undefined;
@@ -138,6 +227,14 @@ export class RecordStore implements RevRecordStore {
             this._records[i].index = i;
         }
     }
+
+    private eventifyRecordInserted(idx: number, recent: boolean): void {
+        this._recordsEventers.recordInserted(idx, recent);
+    }
+
+    private eventifyAllRecordsDeleted() {
+        this._recordsEventers.allRecordsDeleted();
+    }
 }
 
 export namespace RecordStore {
@@ -151,7 +248,7 @@ export namespace RecordStore {
         dsSynchronised,
     }
 
-    export interface Record extends RevRecord {
+    export interface Record extends RevRecordData {
         index: number;
         data: Record.Data;
     }

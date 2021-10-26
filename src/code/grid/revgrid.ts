@@ -52,7 +52,7 @@ export class Revgrid implements SelectionDetail {
     /** @internal */
     private _columnsManager: ColumnsManager;
     /** @internal */
-    private _modelCallbackManager: ModelCallbackRouter;
+    private _modelCallbackRouter: ModelCallbackRouter;
     /** @internal */
     private _featureManager: FeaturesManager;
     /** @internal */
@@ -240,7 +240,7 @@ export class Revgrid implements SelectionDetail {
             (name, detail) => this.handleGridEventDispatchEvent(name, detail),
         );
         this.canvas.renderer = this.renderer;
-        this._modelCallbackManager = this.createModelCallbackRouter();
+        this._modelCallbackRouter = this.createModelCallbackRouter();
 
         // Install shared plug-ins (those with a `preinstall` method)
         // Hypergrid.prototype.installPlugins(options.plugins);
@@ -319,7 +319,7 @@ export class Revgrid implements SelectionDetail {
     destroy() {
         document.removeEventListener('mousedown', this.mouseCatcher);
         this.removeAllEventListeners(true);
-        this._modelCallbackManager.destroy();
+        this._modelCallbackRouter.destroy();
         this.destroySubgrids();
         this.renderer.stop();
         this.canvas.stop();
@@ -491,8 +491,12 @@ export class Revgrid implements SelectionDetail {
         this.setHoverCell(undefined);
         this.scrollingNow = false;
 
+        this.behavior.reset();
+        this._columnsManager.clearColumns();
+        this.renderer.reset();
+
         if (adapterSet !== undefined) {
-            this._modelCallbackManager.reset(); // will unsubscribe from SchemaModel and DataModels
+            this._modelCallbackRouter.reset(); // will unsubscribe from SchemaModel and DataModels
             this.destroySubgrids();
 
             let schemaModel = adapterSet.schemaModel;
@@ -500,21 +504,18 @@ export class Revgrid implements SelectionDetail {
                 schemaModel = new schemaModel();
             }
             this._columnsManager.schemaModel = schemaModel;
-            this._modelCallbackManager.setSchemaModel(this._columnsManager.schemaModel);
+            this._modelCallbackRouter.setSchemaModel(this._columnsManager.schemaModel);
 
             if  (adapterSet.subgrids.length > 0) {
                 this.setSubgrids(adapterSet.subgrids);
             }
         }
 
-        this.behavior.reset();
-        this._columnsManager.clearColumns();
-        this._columnsManager.createColumns();
+        // this._columnsManager.createColumns();
         // if (options?.data !== undefined) {
         //     this.setData(options.data);
         // }
 
-        this.renderer.reset();
         this.canvas.resize();
         // this.behaviorChanged();
 
@@ -2210,7 +2211,9 @@ export class Revgrid implements SelectionDetail {
 
         if (allow){
             this._featureManager.enable();
+            this._modelCallbackRouter.enable();
         } else {
+            this._modelCallbackRouter.disable();
             this._featureManager.disable();
         }
 
@@ -2899,9 +2902,9 @@ export class Revgrid implements SelectionDetail {
         } else {
             this.mainSubgrid = mainSubgrid;
             this.mainDataModel = mainSubgrid.dataModel;
-            if (this._columnsManager.columnsCreated) {
-                this.behaviorShapeChanged();
-            }
+            // if (this._columnsManager.columnsCreated) {
+            //     this.behaviorShapeChanged();
+            // }
         }
     }
 
@@ -2962,18 +2965,31 @@ export class Revgrid implements SelectionDetail {
 
     /** @returns either Subgrid or MainSubgrid depending on role */
     private createSubgrid(role: Subgrid.Role, dataModel: DataModel, metaModel: MetaModel | undefined, cellModel: CellModel | undefined) {
-        const constructor = (role === Subgrid.RoleEnum.main) ? MainSubgrid : Subgrid;
+        let subgrid: Subgrid;
+        if (role === Subgrid.RoleEnum.main) {
+            subgrid = new MainSubgrid(
+                this,
+                this._columnsManager,
+                this._modelCallbackRouter,
+                role,
+                this._columnsManager.schemaModel,
+                dataModel as MainDataModel,
+                metaModel,
+                cellModel,
+            );
+        } else {
+            subgrid = new Subgrid(
+                this,
+                this._columnsManager,
+                role,
+                this._columnsManager.schemaModel,
+                dataModel,
+                metaModel,
+                cellModel,
+            );
+        }
 
-        const subgrid = new constructor(
-            this,
-            this._columnsManager,
-            this._modelCallbackManager,
-            role,
-            this._columnsManager.schemaModel,
-            dataModel,
-            metaModel,
-            cellModel,
-        );
+        this._modelCallbackRouter.registerDataModel(subgrid.dataModel);
 
         return subgrid;
     }
