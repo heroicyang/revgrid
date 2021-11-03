@@ -872,7 +872,7 @@ export interface DataModel {
     // Warning: (tsdoc-reference-missing-dot) Expecting a period before the next component of a declaration reference
     // Warning: (tsdoc-reference-missing-dot) Expecting a period before the next component of a declaration reference
     // Warning: (tsdoc-code-span-missing-delimiter) The code span is missing its closing backtick
-    addDataCallbackListener?(listener: DataModel.CallbackListener): void;
+    addDataCallbackListener(listener: DataModel.CallbackListener): void;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     apply?(): void;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@Summary" is not defined in this configuration
@@ -1614,7 +1614,7 @@ export const lowestValidModelUpdateId = 0;
 // @public (undocumented)
 export interface MainDataModel extends DataModel {
     // (undocumented)
-    addDataCallbackListener?(listener: MainDataModel.CallbackListener): void;
+    addDataCallbackListener(listener: MainDataModel.CallbackListener): void;
     // (undocumented)
     readonly mainDataModel: true;
 }
@@ -1663,7 +1663,7 @@ export class MainSubgrid extends Subgrid {
     // (undocumented)
     getLastSelection(): Selection_2;
     // (undocumented)
-    getLastSelectionType(n?: number): "" | "column" | "row" | "cell";
+    getLastSelectionType(n?: number): "" | "cell" | "column" | "row";
     // (undocumented)
     getMatrixSelectionAsTSV(selections: Array<Array<DataModel.DataValue>>): string;
     // (undocumented)
@@ -2391,7 +2391,7 @@ export class Revgrid implements SelectionDetail {
     // (undocumented)
     getHiDPI(): number;
     // (undocumented)
-    getLastSelectionType(): "" | "column" | "row" | "cell";
+    getLastSelectionType(): "" | "cell" | "column" | "row";
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@summary" is not defined in this configuration
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     getLogicalRowCount(): number;
@@ -3259,7 +3259,7 @@ export const enum RevRecordValueRecentChangeTypeId {
 // @public (undocumented)
 export interface SchemaModel {
     // (undocumented)
-    addSchemaCallbackListener?(listener: SchemaModel.CallbackListener): void;
+    addSchemaCallbackListener(listener: SchemaModel.CallbackListener): void;
     // Warning: (tsdoc-undefined-tag) The TSDoc tag "@desc" is not defined in this configuration
     // Warning: (tsdoc-reference-selector-missing-parens) Syntax error in declaration reference: the member selector must be enclosed in parentheses
     getSchema(): readonly SchemaModel.Column[];

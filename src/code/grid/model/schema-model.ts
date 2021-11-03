@@ -2,7 +2,7 @@ import { DataModel } from './data-model';
 
 /** @public */
 export interface SchemaModel {
-    addSchemaCallbackListener?(listener: SchemaModel.CallbackListener): void;
+    addSchemaCallbackListener(listener: SchemaModel.CallbackListener): void;
     removeSchemaCallbackListener?(listener: SchemaModel.CallbackListener): void;
 
     /**

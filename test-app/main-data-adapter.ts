@@ -7,7 +7,7 @@ export class MainDataAdapter implements MainDataModel {
 
     private readonly _data: MainRecord[] = [];
     private _fishCreateCount = 0;
-    private _dataModelCallbackListener: MainDataModel.CallbackListener;
+    private _callbackListener: MainDataModel.CallbackListener;
 
     constructor() {
         const initialDataCount = MainDataAdapter.initialData.length;
@@ -20,7 +20,12 @@ export class MainDataAdapter implements MainDataModel {
     }
 
     addDataCallbackListener(listener: MainDataModel.CallbackListener) {
-        this._dataModelCallbackListener = listener;
+        this._callbackListener = listener;
+
+        const existingRecordCount = this._data.length;
+        if (existingRecordCount > 0) {
+            listener.rowsInserted(0, existingRecordCount);
+        }
     }
 
     getRowCount() {
@@ -38,19 +43,19 @@ export class MainDataAdapter implements MainDataModel {
     }
 
     sort(column: Column) {
-        this._dataModelCallbackListener.preReindex();
+        this._callbackListener.preReindex();
         try {
             const schemaColumn = column.schemaColumn as SchemaAdapter.Column;
             this._data.sort((left: MainRecord, right: MainRecord) => MainRecord.compareField(schemaColumn.name, left, right));
-            this._dataModelCallbackListener.invalidateAll();
+            this._callbackListener.invalidateAll();
         } finally {
-            this._dataModelCallbackListener.postReindex();
+            this._callbackListener.postReindex();
         }
     }
 
     deleteRow(rowIndex: number) {
         this._data.splice(rowIndex, 1);
-        this._dataModelCallbackListener.rowsDeleted(rowIndex, 1);
+        this._callbackListener.rowsDeleted(rowIndex, 1);
     }
 
     addFish() {
@@ -63,7 +68,7 @@ export class MainDataAdapter implements MainDataModel {
             this._data[index++] = record;
         }
 
-        this._dataModelCallbackListener.rowsInserted(insertIndex, insertCount);
+        this._callbackListener.rowsInserted(insertIndex, insertCount);
     }
 
     private createFishRecord(index: number): MainRecord {

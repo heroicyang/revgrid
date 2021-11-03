@@ -3,7 +3,7 @@ import { DataModel } from './data-model';
 /** @public */
 export interface MainDataModel extends DataModel {
     readonly mainDataModel: true,
-    addDataCallbackListener?(listener: MainDataModel.CallbackListener): void;
+    addDataCallbackListener(listener: MainDataModel.CallbackListener): void;
 }
 
 /** @public */

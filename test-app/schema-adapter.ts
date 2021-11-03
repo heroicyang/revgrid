@@ -2,8 +2,16 @@ import { MainRecord } from 'main-record';
 import { SchemaModel } from '../dist/types/public-api';
 
 export class SchemaAdapter implements SchemaModel {
+    private _callbackListener: SchemaModel.CallbackListener;
+
     getSchema() {
         return SchemaAdapter.schema;
+    }
+
+    addSchemaCallbackListener(listener: SchemaModel.CallbackListener) {
+        this._callbackListener = listener;
+
+        this._callbackListener.schemaChanged();
     }
 }
 

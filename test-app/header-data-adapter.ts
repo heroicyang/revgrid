@@ -9,4 +9,8 @@ export class HeaderDataAdapter implements DataModel {
     getValue(schemaColumn: SchemaModel.Column) {
         return (schemaColumn as SchemaAdapter.Column).header;
     }
+
+    addDataCallbackListener() {
+        // not used
+    }
 }

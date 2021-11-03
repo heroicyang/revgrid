@@ -23,7 +23,7 @@ export interface DataModel {
      *
      * @param listener - A reference to a function bound to a grid instance. The function is called whenever the data model calls its {@link DataModel#dispatchEvent} method. The handler thus receives all data model events (in `event.type).
      */
-    addDataCallbackListener?(listener: DataModel.CallbackListener): void;
+    addDataCallbackListener(listener: DataModel.CallbackListener): void;
 
     /**
      * @desc _IMPLEMENTATION OF THIS METHOD IS OPTIONAL._
